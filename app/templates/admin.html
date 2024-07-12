@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Admin Panel</h1>
+  <table>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Available Requests</th>
+      <th>Actions</th>
+    </tr>
+    {% for user in users %}
+      <tr>
+        <td>{{ user.username }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.available_requests }}</td>
+        <td>
+          <form action="{{ url_for('add_requests', user_id=user.id) }}" method="post">
+            <input type="number" name="requests" placeholder="Requests">
+            <input type="submit" value="Add Requests">
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}
