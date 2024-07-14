@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
 from urllib.parse import urlsplit
 from app import app, db
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm
 from app.models import User
 from app.email import send_email
 from itsdangerous import URLSafeTimedSerializer
@@ -26,8 +26,8 @@ def login():
             flash('Invalid username or password')
             return redirect(url_for('login'))
         if not user.is_confirmed:
-            flash('Your account is not confirmed. Please check your email.')
-            return redirect(url_for('login'))
+            flash('Your account is not confirmed. Please check your email or request a new confirmation link.')
+            return redirect(url_for('resend_confirmation'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
@@ -90,6 +90,28 @@ def confirm_token(token, expiration=3600):
     return email
 
 
+@app.route('/resend_confirmation', methods=['GET', 'POST'])
+def resend_confirmation():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = ResendConfirmationForm()
+    if form.validate_on_submit():
+        user = db.session.scalar(sa.select(User).where(User.email == form.email.data))
+        if user and not user.is_confirmed:
+            token = generate_confirmation_token(user.email)
+            confirm_url = url_for('confirm_email', token=token, _external=True)
+            html = render_template('activate.html', confirm_url=confirm_url)
+            subject = "Please confirm your email"
+            send_email(subject, app.config['ADMINS'][0], [user.email], html, html)
+            flash('A new confirmation email has been sent.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Invalid email or account already confirmed.', 'danger')
+    return render_template('resend_confirmation.html', form=form)
+
+
+
+
 @app.route('/test_request')
 @login_required
 def test_request():
@@ -100,7 +122,6 @@ def test_request():
     else:
         flash('No available requests left.')
     return redirect(url_for('index'))
-
 
 @app.route('/admin')
 @login_required

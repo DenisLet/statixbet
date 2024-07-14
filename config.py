@@ -10,5 +10,5 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    ADMINS = ['your-email@example.com']
+    ADMINS = ['den25ru@gmail.com']
     SECURITY_PASSWORD_SALT = os.getenv('SECURITY_PASSWORD_SALT')
