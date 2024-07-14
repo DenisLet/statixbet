@@ -5,7 +5,8 @@ from urllib.parse import urlsplit
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
 from app.models import User
-
+from app.email import send_email
+from itsdangerous import URLSafeTimedSerializer
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -22,11 +23,14 @@ def login():
         user = db.session.scalar(
             sa.select(User).where(User.username == form.username.data))
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or passwrod')
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        if not user.is_confirmed:
+            flash('Your account is not confirmed. Please check your email.')
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
-        if not next_page or urlsplit(next_page).netloc !='':
+        if not next_page or urlsplit(next_page).netloc != '':
             next_page = url_for('index')
         return redirect(next_page)
     return render_template('login.html', title='Sign in', form=form)
@@ -47,9 +51,43 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
-        return redirect(url_for('login'))
-    return render_template('register.html', title='Regiser', form=form)
+        token = generate_confirmation_token(user.email)
+        confirm_url = url_for('confirm_email', token=token, _external=True)
+        html = render_template('activate.html', confirm_url=confirm_url)
+        subject = "Please confirm your email"
+        send_email(subject, app.config['ADMINS'][0], [user.email], html, html)
+        flash('A confirmation email has been sent via email.', 'success')
+        return redirect(url_for('index'))
+    return render_template('register.html', title='Register', form=form)
+
+def generate_confirmation_token(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
+
+@app.route('/confirm/<token>')
+def confirm_email(token):
+    try:
+        email = confirm_token(token)
+    except:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+        return redirect(url_for('index'))
+    user = User.query.filter_by(email=email).first_or_404()
+    if user.is_confirmed:
+        flash('Account already confirmed. Please login.', 'success')
+    else:
+        user.is_confirmed = True
+        db.session.add(user)
+        db.session.commit()
+        flash('You have confirmed your account. Thanks!', 'success')
+    return redirect(url_for('index'))
+
+def confirm_token(token, expiration=3600):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt=app.config['SECURITY_PASSWORD_SALT'], max_age=expiration)
+    except:
+        return False
+    return email
 
 
 @app.route('/test_request')
