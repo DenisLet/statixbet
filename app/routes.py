@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
 from urllib.parse import urlsplit
@@ -7,6 +7,7 @@ from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, Reset
 from app.models import User
 from app.email import send_email, send_password_reset_email
 from itsdangerous import URLSafeTimedSerializer
+import os
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -175,4 +176,25 @@ def add_requests(user_id):
     return redirect(url_for('admin_panel'))
 
 
+@app.route('/equalizer')
+def unity_index():
+    return render_template('unity.html')
 
+@app.route('/static/unity/Build/<path:filename>')
+def send_build(filename):
+    file_path = os.path.join('static', 'unity', 'Build', filename)
+    if filename.endswith('.gz'):
+        response = send_from_directory(os.path.dirname(file_path), os.path.basename(file_path))
+        response.headers['Content-Encoding'] = 'gzip'
+        return response
+    return send_from_directory(os.path.dirname(file_path), os.path.basename(file_path))
+
+@app.route('/static/unity/TemplateData/<path:filename>')
+def send_template_data(filename):
+    return send_from_directory(os.path.join('static', 'unity', 'TemplateData'), filename)
+
+@app.route('/get_cube_count')
+def get_cube_count():
+    # Замените это значение на логику получения количества кубиков
+    cube_count = 1
+    return jsonify({'cube_count': cube_count})

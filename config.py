@@ -12,3 +12,5 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     ADMINS = ['den25ru@gmail.com']
     SECURITY_PASSWORD_SALT = os.getenv('SECURITY_PASSWORD_SALT')
+
+

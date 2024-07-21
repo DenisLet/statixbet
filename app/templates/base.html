@@ -70,6 +70,7 @@
         <a class="brand" href="{{ url_for('index') }}">Statixbet</a>
         {% if current_user.is_anonymous %}
             <a href="{{ url_for('login') }}">Login</a>
+            <a href="{{ url_for('unity_index') }}">Equlaizer</a>
         {% else %}
             <span>{{ current_user.username }}</span>
             <span>Available requests: {{ current_user.available_requests }}</span>
