@@ -1,0 +1,55 @@
+{% block content %}
+    <div id="odds-scan-section" class="sub-section">
+        <h3>Odds Scan Form</h3>
+        <form id="odds-scan-form">
+            <div class="form-group">
+                <div>
+                    <label for="country">Country:</label><br>
+                    <input type="text" id="country" name="country" required>
+                </div>
+                <div>
+                    <label for="league">League:</label><br>
+                    <input type="text" id="league" name="league" required>
+                </div>
+                <div>
+                    <label for="team">Team:</label><br>
+                    <input type="text" id="team" name="team" required>
+                </div>
+                <div>
+                    <label for="sportbook">Sportbook:</label><br>
+                    <input type="text" id="sportbook" name="sportbook" required style="width: 150px;">
+                </div>
+            </div>
+
+            <fieldset>
+                <legend>Team 1</legend>
+                <div class="form-group">
+                    <div>
+                        <label for="team1-win">Win Odds (Team 1):</label><br>
+                        <input type="number" id="team1-win" name="team1-win" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="team1-draw">Draw Odds:</label><br>
+                        <input type="number" id="team1-draw" name="team1-draw" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="team1-loss">Win Odds (Team 2):</label><br>
+                        <input type="number" id="team1-loss" name="team1-loss" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div>
+                        <label for="team1-over-1.5">Over 1.5 Odds:</label><br>
+                        <input type="number" id="team1-over-1.5" name="team1-over-1.5" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="team1-over-2.5">Over 2.5 Odds:</label><br>
+                        <input type="number" id="team1-over-2.5" name="team1-over-2.5" step="0.01" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+{% endblock %}

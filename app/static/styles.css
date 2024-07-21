@@ -1,0 +1,188 @@
+@font-face {
+    font-family: 'Moscow2024';
+    src: url('/static/fonts/MOSCOW2024.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Moscow2024', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    padding: 1rem;
+}
+
+.navbar .brand {
+    font-size: 1.5rem;
+    color: white;
+    text-decoration: none;
+}
+
+.sports-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+}
+
+.navbar a:hover {
+    background-color: white; /* Подсветка при наведении */
+    color: black;
+}
+
+.navbar a.active {
+    background-color: red;
+    color: white;
+}
+
+.navbar .right {
+    display: flex;
+    align-items: center;
+}
+
+.navbar .right span {
+    margin-right: 1rem;
+}
+
+.header {
+    font-family: 'Moscow2024', sans-serif;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+}
+
+.button {
+    font-family: 'Moscow2024', sans-serif;
+    color: white;
+    background-color: #333;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: white; /* Подсветка при наведении */
+    color: black;
+}
+
+.button.active {
+    background-color: red;
+    color: white;
+}
+
+.section {
+    display: none;
+}
+
+.sub-buttons {
+    display: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.sub-button {
+    font-family: 'Moscow2024', sans-serif;
+    color: white;
+    background-color: #333;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.sub-button:hover {
+    background-color: white; /* Подсветка при наведении */
+    color: black;
+}
+
+.sub-button.active {
+    background-color: red;
+    color: white;
+}
+
+.sub-section {
+    display: none;
+}
+
+.arrow {
+    color: red;
+    font-size: 1.5rem;
+    margin-left: 0.5rem;
+}
+
+form {
+    max-width: 100%;
+}
+
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    flex: 1;
+}
+
+.form-group input {
+    flex: 2;
+}
+
+.form-group div {
+    flex: 1;
+}
+
+input[type="text"], input[type="number"] {
+    width: auto;
+}
+
+fieldset {
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+legend {
+    font-family: 'Moscow2024', sans-serif;
+    font-weight: bold;
+}
+
+button[type="submit"] {
+    font-family: 'Moscow2024', sans-serif;
+    color: white;
+    background-color: #333;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+button[type="submit"]:hover {
+    background-color: red;
+    color: white;
+}

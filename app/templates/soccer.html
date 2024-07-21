@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header">
+    <h2 id="section-title">Select a Section</h2>
+</div>
+<div class="buttons">
+    <button id="live-button" class="button" onclick="showSection('live')">Live</button>
+    <button id="pre-match-button" class="button" onclick="showSection('pre-match')">Pre-match</button>
+    <div id="arrow" class="arrow" style="display:none;">&#9654;</div>
+    <div id="sub-buttons" class="sub-buttons" style="display:none;">
+        <button id="odds-scan-button" class="sub-button" onclick="showSubSection('odds-scan')">Odds Scan</button>
+        <button id="stat-scan-button" class="sub-button" onclick="showSubSection('stat-scan')">Stat Scan</button>
+        <button id="test-scan-button" class="sub-button" onclick="showSubSection('test-scan')">Test Scan</button>
+    </div>
+</div>
+
+<div id="pre-match-section" class="section" style="display:none;">
+    <div id="odds-scan-content"></div>
+
+    <div id="stat-scan-section" class="sub-section" style="display:none;">
+        <!-- Content for Stat Scan section goes here -->
+    </div>
+    <div id="test-scan-section" class="sub-section" style="display:none;">
+        <!-- Content for Test Scan section goes here -->
+    </div>
+</div>
+
+<div id="live-section" class="section" style="display:none;">
+    <!-- Content for Live section goes here -->
+</div>
+
+<script>
+    function showSection(section) {
+        document.getElementById('pre-match-section').style.display = 'none';
+        document.getElementById('live-section').style.display = 'none';
+        document.getElementById(section + '-section').style.display = 'block';
+
+        document.getElementById('section-title').innerText = section.charAt(0).toUpperCase() + section.slice(1) + ' Section';
+
+        document.getElementById('pre-match-button').classList.remove('active');
+        document.getElementById('live-button').classList.remove('active');
+        document.getElementById(section + '-button').classList.add('active');
+
+        var subButtons = document.getElementById('sub-buttons');
+        var arrow = document.getElementById('arrow');
+        if (section === 'pre-match') {
+            subButtons.style.display = 'flex';
+            arrow.style.display = 'block';
+
+            fetch('/odds_scan_content')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('odds-scan-content').innerHTML = data;
+                });
+        } else {
+            subButtons.style.display = 'none';
+            arrow.style.display = 'none';
+            document.getElementById('odds-scan-content').innerHTML = '';
+        }
+
+        var subSectionButtons = document.querySelectorAll('.sub-button');
+        subSectionButtons.forEach(function(button) {
+            button.classList.remove('active');
+        });
+        var subSections = document.querySelectorAll('.sub-section');
+        subSections.forEach(function(section) {
+            section.style.display = 'none';
+        });
+    }
+
+    function showSubSection(subSection) {
+        var subSections = document.querySelectorAll('.sub-section');
+        subSections.forEach(function(section) {
+            section.style.display = 'none';
+        });
+        document.getElementById(subSection + '-section').style.display = 'block';
+
+        var subSectionButtons = document.querySelectorAll('.sub-button');
+        subSectionButtons.forEach(function(button) {
+            button.classList.remove('active');
+        });
+        document.getElementById(subSection + '-button').classList.add('active');
+    }
+</script>
+{% endblock %}

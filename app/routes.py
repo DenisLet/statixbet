@@ -198,3 +198,17 @@ def get_cube_count():
     # Замените это значение на логику получения количества кубиков
     cube_count = 1
     return jsonify({'cube_count': cube_count})
+
+
+@app.route('/soccer')
+def soccer():
+    return render_template('soccer.html', active_page='soccer')
+
+@app.route('/odds_scan_content')
+def odds_scan_content():
+    return render_template('soccer/soccer_odds_scan.html')
+
+
+@app.route('/under_construction')
+def under_construction():
+    return render_template('under_construction.html')

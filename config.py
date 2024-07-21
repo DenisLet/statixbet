@@ -14,3 +14,7 @@ class Config:
     SECURITY_PASSWORD_SALT = os.getenv('SECURITY_PASSWORD_SALT')
 
 
+
+
+
+
