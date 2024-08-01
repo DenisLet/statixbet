@@ -46,3 +46,72 @@ class User(UserMixin, db.Model):
         return 'User <{}>'.format(self.username)
 
 
+class ChampionshipsSoccer(db.Model):
+    __tablename__ = 'championships_soccer'
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    country: so.Mapped[str] = so.mapped_column(sa.String(64))
+    gender: so.Mapped[str] = so.mapped_column(sa.String(64))
+    league: so.Mapped[str] = so.mapped_column(sa.String(64))
+    link: so.Mapped[str] = so.mapped_column(sa.String(256))
+
+    def __repr__(self):
+        return f'<ChampionshipsSoccer {self.country} - {self.league}>'
+
+
+class SoccerMain(db.Model):
+    __tablename__ = 'soccer_main'
+
+    match_id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    league_id: so.Mapped[int] = so.mapped_column(sa.Integer)
+    match_date: so.Mapped[sa.Date] = so.mapped_column(sa.Date)
+    start_time: so.Mapped[sa.Time] = so.mapped_column(sa.Time)
+    team_home: so.Mapped[str] = so.mapped_column(sa.String(64))
+    team_away: so.Mapped[str] = so.mapped_column(sa.String(64))
+    league_name: so.Mapped[str] = so.mapped_column(sa.String(64))
+    stage: so.Mapped[str] = so.mapped_column(sa.String(64))
+    home_score_ft: so.Mapped[Optional[int]] = so.mapped_column(sa.Integer, nullable=True)
+    away_score_ft: so.Mapped[Optional[int]] = so.mapped_column(sa.Integer, nullable=True)
+    total_ft: so.Mapped[Optional[int]] = so.mapped_column(sa.Integer, nullable=True)
+    final: so.Mapped[str] = so.mapped_column(sa.String(64))
+
+    def __repr__(self):
+        return f'<SoccerMain Match {self.match_id} - {self.team_home} vs {self.team_away}>'
+
+
+class XbetOdds(db.Model):
+    __tablename__ = 'xbet_odds'
+
+    match_id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    win_home_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_home_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+
+    def __repr__(self):
+        return f'<XbetOdds Match {self.match_id, self.win_home_open, self.win_home_close}>'
+
+
+class Bet365Odds(db.Model):
+    __tablename__ = 'bet365_odds'
+
+    match_id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    win_home_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_home_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+
+    def __repr__(self):
+        return f'<Bet365Odds Match {self.match_id,self.win_home_open, self.win_home_close}>'

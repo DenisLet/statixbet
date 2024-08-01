@@ -1,6 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
+from sqlalchemy import text
 from urllib.parse import urlsplit
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
@@ -212,3 +213,8 @@ def odds_scan_content():
 @app.route('/under_construction')
 def under_construction():
     return render_template('under_construction.html')
+
+@app.route('/api/countries', methods=['GET'])
+def get_countries_endpoint():
+    countries = get_countries()  # Функция для получения стран из базы данных
+    return jsonify(countries)
