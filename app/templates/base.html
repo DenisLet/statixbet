@@ -5,6 +5,8 @@
     <title>Statixbet</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon_red.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Подключение библиотеки select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body>
     <div class="navbar">
@@ -39,6 +41,8 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
+    <!-- Подключение библиотеки select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         function toggleSection(sectionId) {
             const sections = document.querySelectorAll('.section');

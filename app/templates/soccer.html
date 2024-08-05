@@ -1,86 +1,268 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="header">
-    <h2 id="section-title">Select a Section</h2>
-</div>
-<div class="buttons">
-    <button id="live-button" class="button" onclick="showSection('live')">Live</button>
-    <button id="pre-match-button" class="button" onclick="showSection('pre-match')">Pre-match</button>
-    <div id="arrow" class="arrow" style="display:none;">&#9654;</div>
-    <div id="sub-buttons" class="sub-buttons" style="display:none;">
-        <button id="odds-scan-button" class="sub-button" onclick="showSubSection('odds-scan')">Odds Scan</button>
-        <button id="stat-scan-button" class="sub-button" onclick="showSubSection('stat-scan')">Stat Scan</button>
-        <button id="test-scan-button" class="sub-button" onclick="showSubSection('test-scan')">Test Scan</button>
+    <div class="header">
+        <h2 id="section-title">Select a Section</h2>
     </div>
-</div>
-
-<div id="pre-match-section" class="section" style="display:none;">
-    <div id="odds-scan-content"></div>
-
-    <div id="stat-scan-section" class="sub-section" style="display:none;">
-        <!-- Content for Stat Scan section goes here -->
+    <div class="buttons">
+        <button id="live-button" class="button" onclick="showSection('live')">Live</button>
+        <button id="pre-match-button" class="button" onclick="showSection('pre-match')">Pre-match</button>
+        <div id="arrow" class="arrow" style="display:none;">&#9654;</div>
+        <div id="sub-buttons" class="sub-buttons" style="display:none;">
+            <button id="odds-scan-button" class="sub-button" onclick="showSubSection('odds-scan')">Odds Scan</button>
+            <button id="stat-scan-button" class="sub-button" onclick="showSubSection('stat-scan')">Stat Scan</button>
+            <button id="test-scan-button" class="sub-button" onclick="showSubSection('test-scan')">Test Scan</button>
+        </div>
     </div>
-    <div id="test-scan-section" class="sub-section" style="display:none;">
-        <!-- Content for Test Scan section goes here -->
+
+    <div id="no-section-message" style="display:none;">
+        <p>Please select either "Live" or "Pre-match" to proceed.</p>
     </div>
-</div>
 
-<div id="live-section" class="section" style="display:none;">
-    <!-- Content for Live section goes here -->
-</div>
+    <div id="pre-match-section" class="section" style="display:none;">
+        <div id="country-case-container">
+            {% include 'soccer/country_case.html' %}
+        </div>
 
-<script>
-    function showSection(section) {
-        document.getElementById('pre-match-section').style.display = 'none';
-        document.getElementById('live-section').style.display = 'none';
-        document.getElementById(section + '-section').style.display = 'block';
+        <div id="odds-scan-content">
+            <div id="odds-scan-section" class="sub-section">
+                <h3>Odds Scan Form</h3>
+                <form id="odds-scan-form" action="/process-form" method="POST" onsubmit="return handleFormSubmit(event)">
+                    <!-- Include form elements with corresponding id -->
+                    <div class="form-group">
+                        {% include 'soccer/odds_case.html' %}
+                    </div>
+                    <button type="submit">Submit</button>
+                </form>
+                <div id="form-data-output" style="margin-top: 20px;">
+                    <!-- The output of form data will be shown here -->
+                </div>
+            </div>
+        </div>
+        <div id="stat-scan-section" class="sub-section" style="display:none;">
+            <!-- Content for Stat Scan section goes here -->
+        </div>
+        <div id="test-scan-section" class="sub-section" style="display:none;">
+            <!-- Content for Test Scan section goes here -->
+        </div>
+    </div>
 
-        document.getElementById('section-title').innerText = section.charAt(0).toUpperCase() + section.slice(1) + ' Section';
+    <div id="live-section" class="section" style="display:none;">
+        <!-- Content for Live section goes here -->
+    </div>
 
-        document.getElementById('pre-match-button').classList.remove('active');
-        document.getElementById('live-button').classList.remove('active');
-        document.getElementById(section + '-button').classList.add('active');
-
-        var subButtons = document.getElementById('sub-buttons');
-        var arrow = document.getElementById('arrow');
-        if (section === 'pre-match') {
-            subButtons.style.display = 'flex';
-            arrow.style.display = 'block';
-
-            fetch('/odds_scan_content')
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('odds-scan-content').innerHTML = data;
-                });
-        } else {
-            subButtons.style.display = 'none';
-            arrow.style.display = 'none';
-            document.getElementById('odds-scan-content').innerHTML = '';
+    <script>
+        function sortSelectOptions(selectElement) {
+            const options = Array.from(selectElement.options);
+            options.sort((a, b) => a.text.localeCompare(b.text));
+            options.forEach(option => selectElement.appendChild(option));
         }
 
-        var subSectionButtons = document.querySelectorAll('.sub-button');
-        subSectionButtons.forEach(function(button) {
-            button.classList.remove('active');
-        });
-        var subSections = document.querySelectorAll('.sub-section');
-        subSections.forEach(function(section) {
-            section.style.display = 'none';
-        });
-    }
+        function loadCountries() {
+            console.log('Fetching countries...');
+            fetch('/api/countries')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Data fetched:', data);
+                    const select = document.getElementById('country');
+                    if (select) {
+                        select.innerHTML = '<option value="">All Countries</option>';
+                        data.forEach(country => {
+                            const option = document.createElement('option');
+                            option.value = country;
+                            option.textContent = country;
+                            select.appendChild(option);
+                        });
+                        sortSelectOptions(select);
+                        select.value = '';
+                    } else {
+                        console.error('Select element not found');
+                    }
+                })
+                .catch(error => console.error('Error fetching countries:', error));
+        }
 
-    function showSubSection(subSection) {
-        var subSections = document.querySelectorAll('.sub-section');
-        subSections.forEach(function(section) {
-            section.style.display = 'none';
-        });
-        document.getElementById(subSection + '-section').style.display = 'block';
+        function loadLeagues(country) {
+            console.log('Fetching leagues for country:', country);
+            fetch(`/api/leagues?country=${encodeURIComponent(country)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Leagues fetched:', data);
+                    const select = document.getElementById('league');
+                    if (select) {
+                        select.innerHTML = '<option value="">All Leagues</option>';
+                        data.forEach(league => {
+                            const option = document.createElement('option');
+                            option.value = league;
+                            option.textContent = league;
+                            select.appendChild(option);
+                        });
+                        sortSelectOptions(select);
+                        select.value = '';
+                    } else {
+                        console.error('Select element not found');
+                    }
+                })
+                .catch(error => console.error('Error fetching leagues:', error));
+        }
 
-        var subSectionButtons = document.querySelectorAll('.sub-button');
-        subSectionButtons.forEach(function(button) {
-            button.classList.remove('active');
+        function loadTeams(league) {
+            console.log('Fetching teams for league:', league);
+            fetch(`/api/teams?league=${encodeURIComponent(league)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Teams fetched:', data);
+                    const select = document.getElementById('team');
+                    if (select) {
+                        select.innerHTML = '<option value="">All Teams</option>';
+                        data.forEach(team => {
+                            const option = document.createElement('option');
+                            option.value = team;
+                            option.textContent = team;
+                            select.appendChild(option);
+                        });
+                        sortSelectOptions(select);
+                        select.value = '';
+                    } else {
+                        console.error('Select element not found');
+                    }
+                })
+                .catch(error => console.error('Error fetching teams:', error));
+        }
+
+        function showSection(section) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(sec => sec.style.display = 'none');
+            const subSections = document.querySelectorAll('.sub-section');
+            subSections.forEach(sec => sec.style.display = 'none');
+            const buttons = document.querySelectorAll('.button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if (section === 'live' || section === 'pre-match') {
+                document.getElementById(section + '-section').style.display = 'block';
+                document.getElementById('section-title').innerText = section.charAt(0).toUpperCase() + section.slice(1) + ' Section';
+                document.getElementById(section + '-button').classList.add('active');
+                document.getElementById('no-section-message').style.display = 'none';
+
+                if (section === 'pre-match') {
+                    document.getElementById('sub-buttons').style.display = 'flex';
+                    document.getElementById('arrow').style.display = 'block';
+                    loadCountries();
+                } else {
+                    document.getElementById('sub-buttons').style.display = 'none';
+                    document.getElementById('arrow').style.display = 'none';
+                }
+            } else {
+                document.getElementById('no-section-message').style.display = 'block';
+            }
+        }
+
+        function showSubSection(subSection) {
+            const subSections = document.querySelectorAll('.sub-section');
+            subSections.forEach(section => section.style.display = 'none');
+            document.getElementById(subSection + '-section').style.display = 'block';
+
+            const subSectionButtons = document.querySelectorAll('.sub-button');
+            subSectionButtons.forEach(button => button.classList.remove('active'));
+            document.getElementById(subSection + '-button').classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const countrySelect = document.getElementById('country');
+            const leagueSelect = document.getElementById('league');
+            const teamSelect = document.getElementById('team');
+
+            if (countrySelect) {
+                countrySelect.addEventListener('change', function() {
+                    const selectedCountry = this.value;
+                    console.log('Selected country:', selectedCountry);
+                    if (selectedCountry) {
+                        loadLeagues(selectedCountry);
+                        teamSelect.innerHTML = '<option value="">All Teams</option>';
+                    } else {
+                        leagueSelect.innerHTML = '<option value="">All Leagues</option>';
+                        teamSelect.innerHTML = '<option value="">All Teams</option>';
+                    }
+                });
+            }
+
+            if (leagueSelect) {
+                leagueSelect.addEventListener('change', function() {
+                    const selectedLeague = this.value;
+                    console.log('Selected league:', selectedLeague);
+                    if (selectedLeague) {
+                        loadTeams(selectedLeague);
+                    } else {
+                        teamSelect.innerHTML = '<option value="">All Teams</option>';
+                    }
+                });
+            }
         });
-        document.getElementById(subSection + '-button').classList.add('active');
-    }
-</script>
+
+        function validateForm() {
+            const inputs = document.querySelectorAll('input[type="number"]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (input.value.trim() !== '' && isNaN(input.value)) {
+                    isValid = false;
+                    input.style.borderColor = 'red';
+                } else {
+                    input.style.borderColor = '';
+                }
+            });
+
+            if (!isValid) {
+                alert('Please fill out all fields with valid numbers.');
+                return false;
+            }
+
+            return true;
+        }
+
+            function handleFormSubmit(event) {
+                event.preventDefault(); // Prevent the default form submission
+
+                // Collect form data
+                const formData = {
+                    country: document.getElementById('country') ? document.getElementById('country').value : '',
+                    league: document.getElementById('league') ? document.getElementById('league').value : '',
+                    team: document.getElementById('team') ? document.getElementById('team').value : '',
+                    sportbook: document.getElementById('sportbook') ? document.getElementById('sportbook').value : '',
+                    date_from: document.getElementById('date_from') ? document.getElementById('date_from').value : '',
+                    date_to: document.getElementById('date_to') ? document.getElementById('date_to').value : '',
+                    position: document.getElementById('where') ? document.getElementById('where').value : '',
+                    team1_win: document.getElementById('team1-win') ? document.getElementById('team1-win').value : '',
+                    team1_win_minus: document.getElementById('team1-win-minus') ? document.getElementById('team1-win-minus').value : '',
+                    team1_win_plus: document.getElementById('team1-win-plus') ? document.getElementById('team1-win-plus').value : '',
+                    team1_draw: document.getElementById('team1-draw') ? document.getElementById('team1-draw').value : '',
+                    team1_draw_minus: document.getElementById('team1-draw-minus') ? document.getElementById('team1-draw-minus').value : '',
+                    team1_draw_plus: document.getElementById('team1-draw-plus') ? document.getElementById('team1-draw-plus').value : '',
+                    team1_loss: document.getElementById('team1-loss') ? document.getElementById('team1-loss').value : '',
+                    team1_loss_minus: document.getElementById('team1-loss-minus') ? document.getElementById('team1-loss-minus').value : '',
+                    team1_loss_plus: document.getElementById('team1-loss-plus') ? document.getElementById('team1-loss-plus').value : '',
+                    team1_over_15: document.getElementById('team1-over-1.5') ? document.getElementById('team1-over-1.5').value : '',
+                    team1_over_15_minus: document.getElementById('team1-over-1.5-minus') ? document.getElementById('team1-over-1.5-minus').value : '',
+                    team1_over_15_plus: document.getElementById('team1-over-1.5-plus') ? document.getElementById('team1-over-1.5-plus').value : '',
+                    team1_over_25: document.getElementById('team1-over-2.5') ? document.getElementById('team1-over-2.5').value : '',
+                    team1_over_25_minus: document.getElementById('team1-over-2.5-minus') ? document.getElementById('team1-over-2.5-minus').value : '',
+                    team1_over_25_plus: document.getElementById('team1-over-2.5-plus') ? document.getElementById('team1-over-2.5-plus').value : ''
+                };
+
+                fetch('/process-form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+    </script>
 {% endblock %}

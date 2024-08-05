@@ -5,10 +5,13 @@ from sqlalchemy import text
 from urllib.parse import urlsplit
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
-from app.models import User
+from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds
 from app.email import send_email, send_password_reset_email
+from app.spare_func import count_odds_diff
 from itsdangerous import URLSafeTimedSerializer
 import os
+from datetime import datetime
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -200,21 +203,194 @@ def get_cube_count():
     cube_count = 1
     return jsonify({'cube_count': cube_count})
 
+@app.route('/under_construction')
+def under_construction():
+    return render_template('under_construction.html')
 
 @app.route('/soccer')
 def soccer():
     return render_template('soccer.html', active_page='soccer')
+
+
 
 @app.route('/odds_scan_content')
 def odds_scan_content():
     return render_template('soccer/soccer_odds_scan.html')
 
 
-@app.route('/under_construction')
-def under_construction():
-    return render_template('under_construction.html')
+
 
 @app.route('/api/countries', methods=['GET'])
-def get_countries_endpoint():
-    countries = get_countries()  # Функция для получения стран из базы данных
-    return jsonify(countries)
+def get_countries():
+    try:
+        countries = db.session.query(ChampionshipsSoccer.country).join(
+            SoccerMain, ChampionshipsSoccer.id == SoccerMain.league_id
+        ).distinct().order_by(ChampionshipsSoccer.country).all()
+
+        country_list = [country[0] for country in countries]
+        print('Countries:', country_list)  # Отладочная информация
+        return jsonify(country_list)
+    except Exception as e:
+        print('Error fetching countries:', e)
+        return jsonify([]), 500
+
+
+@app.route('/api/leagues', methods=['GET'])
+def get_leagues():
+    country = request.args.get('country')
+    if not country:
+        return jsonify({"error": "Country parameter is required"}), 400
+
+    try:
+        leagues = db.session.query(ChampionshipsSoccer.league).join(
+            SoccerMain, ChampionshipsSoccer.id == SoccerMain.league_id
+        ).filter(
+            ChampionshipsSoccer.country == country
+        ).distinct().order_by(ChampionshipsSoccer.league).all()
+
+        leagues_list = [league[0] for league in leagues]
+        return jsonify(leagues_list)
+    except Exception as e:
+        print('Error fetching leagues:', e)
+        return jsonify([]), 500
+
+@app.route('/api/teams', methods=['GET'])
+def get_teams():
+    league = request.args.get('league')
+    if not league:
+        return jsonify({"error": "League parameter is required"}), 400
+
+    try:
+        # Получаем список команд из модели SoccerMain для заданной лиги
+        teams = db.session.query(SoccerMain.team_home).filter(
+            SoccerMain.league_name == league
+        ).distinct().union(
+            db.session.query(SoccerMain.team_away).filter(
+                SoccerMain.league_name == league
+            ).distinct()
+        ).order_by(SoccerMain.team_home).all()
+
+        # Преобразуем результат в список строк
+        teams_list = [team[0] for team in teams if team[0] is not None]
+        return jsonify(teams_list)
+    except Exception as e:
+        print('Error fetching teams:', e)
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route('/process-form', methods=['POST'])
+def process_form():
+    data = request.get_json()
+    print(data)
+
+    country = data.get('country')
+    league = data.get('league')
+    team = data.get('team')
+    sportbook = data.get('sportbook')
+    date_from = data.get('date_from')
+    date_to = data.get('date_to')
+    position = data.get('position')
+
+    win_open = float(data.get('team1_win', 0))
+    win_open_minus = float(data.get('team1_win_minus', 0))
+    win_open_plus = float(data.get('team1_win_plus', 0))
+
+    draw_open = float(data.get('team1Draw', 0))
+    draw_open_minus = float(data.get('team1DrawMinus', 0))
+    draw_open_plus = float(data.get('team1DrawPlus', 0))
+
+    loss_open = float(data.get('team1Loss', 0))
+    loss_open_minus = float(data.get('team1LossMinus', 0))
+    loss_open_plus = float(data.get('team1LossPlus', 0))
+
+    over_1_5_open = float(data.get('team1Over15', 0))
+    over_1_5_open_minus = float(data.get('team1Over15Minus', 0))
+    over_1_5_open_plus = float(data.get('team1Over15Plus', 0))
+
+    over_2_5_open = float(data.get('team1Over25', 0))
+    over_2_5_open_minus = float(data.get('team1Over25Minus', 0))
+    over_2_5_open_plus = float(data.get('team1Over25Plus', 0))
+
+    print(date_from, date_to, position)
+
+    # Convert date strings to datetime.date objects if provided
+    if date_from:
+        try:
+            date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date_from format, should be YYYY-MM-DD'}), 400
+
+    if date_to:
+        try:
+            date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date_to format, should be YYYY-MM-DD'}), 400
+
+    sportbook_models = {
+        '1xbet': XbetOdds,
+        'bet365': Bet365Odds
+    }
+    selected_model = sportbook_models.get(sportbook.lower())
+
+    if not selected_model:
+        return jsonify({'error': 'Invalid sportbook'}), 400
+
+    query = db.session.query(
+        selected_model,
+        SoccerMain,
+        ChampionshipsSoccer
+    ).join(
+        SoccerMain, selected_model.match_id == SoccerMain.match_id
+    ).join(
+        ChampionshipsSoccer, SoccerMain.league_id == ChampionshipsSoccer.id
+    )
+
+    # Adding filters
+    if country:
+        query = query.filter(ChampionshipsSoccer.country == country)
+    if league:
+        query = query.filter(ChampionshipsSoccer.league == league)
+    if team and position == "HOME":
+        query = query.filter(SoccerMain.team_home == team)
+    if team and position == "AWAY":
+        query = query.filter(SoccerMain.team_away == team)
+
+    if date_from:
+        query = query.filter(SoccerMain.match_date >= date_from)
+    if date_to:
+        query = query.filter(SoccerMain.match_date <= date_to)
+
+    if win_open is not None and win_open_minus is not None and win_open_plus is not None:
+        query = query.filter(selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus))
+
+    results = query.all()
+    response_list = []
+    print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus)
+    total_cases = 0
+    for result in results:
+        if result:
+            total_cases += 1
+            match = {
+                'date': result[1].match_date,
+                'team_home': result[1].team_home,
+                'team_away': result[1].team_away,
+                'home_score_ft': result[1].home_score_ft,
+                'away_score_ft': result[1].away_score_ft,
+                'win_home_open': result[0].win_home_open,
+                'win_home_close': result[0].win_home_close
+            }
+            response_list.append(match)
+
+            print(f"{match['date']}. {match['team_home']} vs {match['team_away']}, "
+                  f"Score: {match['home_score_ft']}-{match['away_score_ft']}, Win Home Open:"
+                  f" {match['win_home_open']}, Win Home Close: {match['win_home_close']} "
+                  f"Diff:{count_odds_diff(match['win_home_open'], match['win_home_close'])[0]}  "
+                  f"{count_odds_diff(match['win_home_open'], match['win_home_close'])[1]} %")
+    print(total_cases)
+    if not response_list:
+        response = {'error': 'No matching records found'}
+    else:
+        response = response_list
+
+    return jsonify(response)
+
