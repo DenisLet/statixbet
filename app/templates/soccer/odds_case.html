@@ -2,7 +2,7 @@
     <legend>Team 1</legend>
     <div class="form-group">
         <div>
-            <label for="team1-win">Win Odds (Team 1):</label><br>
+            <label for="team1-win" id="team1-win-label">Win Odds (Team):</label><br>
             <input type="number" id="team1-win" name="team1-win" step="0.01">
             <div class="adjustments">
                 <input type="number" id="team1-win-minus" name="team1-win-minus" step="0.01" placeholder="-" style="width: 50px;">
@@ -18,7 +18,7 @@
             </div>
         </div>
         <div>
-            <label for="team1-loss">Win Odds (Team 2):</label><br>
+            <label for="team1-loss" id="team1-loss-label">Win Odds (OPPONENT):</label><br>
             <input type="number" id="team1-loss" name="team1-loss" step="0.01">
             <div class="adjustments">
                 <input type="number" id="team1-loss-minus" name="team1-loss-minus" step="0.01" placeholder="-" style="width: 50px;">
@@ -43,5 +43,22 @@
                 <input type="number" id="team1-over-2.5-plus" name="team1-over-2.5-plus" step="0.01" placeholder="+" style="width: 50px;">
             </div>
         </div>
+        <button type="button" id="reset-button">Reset All Fields</button>
     </div>
+
 </fieldset>
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Function to reset all fields
+        function resetFields() {
+            const inputs = document.querySelectorAll('fieldset input[type="number"]');
+            inputs.forEach(input => {
+                input.value = '';
+            });
+        }
+
+        // Add event listener to the reset button
+        document.getElementById('reset-button').addEventListener('click', resetFields);
+    });
+</script>

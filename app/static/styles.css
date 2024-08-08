@@ -194,7 +194,35 @@ button[type="submit"]:hover {
     color: white;
 }
 
+button[id="reset-button"] {
+    font-family: 'Moscow2024', sans-serif;
+    color: white;
+    background-color: #333;
+    border: none;
+    padding: 1rem 1rem;
+    cursor: pointer;
+
+}
+
+button[id="reset-button"]:hover {
+    background-color: red;
+    color: white;
+}
+
 .full-width {
     flex-basis: 100%;
     height: 0;
+}
+
+.highlight {
+    animation: highlight-animation 0.5s forwards;
+}
+
+@keyframes highlight-animation {
+    0% {
+        background-color: red;
+    }
+    100% {
+        background-color: transparent;
+    }
 }

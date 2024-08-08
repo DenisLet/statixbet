@@ -18,10 +18,10 @@
     <div id="no-section-message" style="display:none;">
         <p>Please select either "Live" or "Pre-match" to proceed.</p>
     </div>
-
+    <br>
     <div id="pre-match-section" class="section" style="display:none;">
         <div id="country-case-container">
-            {% include 'soccer/country_case.html' %}
+
         </div>
 
         <div id="odds-scan-content">
@@ -30,6 +30,7 @@
                 <form id="odds-scan-form" action="/process-form" method="POST" onsubmit="return handleFormSubmit(event)">
                     <!-- Include form elements with corresponding id -->
                     <div class="form-group">
+                        {% include 'soccer/country_case.html' %}
                         {% include 'soccer/odds_case.html' %}
                     </div>
                     <button type="submit">Submit</button>
@@ -50,6 +51,7 @@
     <div id="live-section" class="section" style="display:none;">
         <!-- Content for Live section goes here -->
     </div>
+    <div id="response-output"></div>
 
     <script>
         function sortSelectOptions(selectElement) {
@@ -106,29 +108,45 @@
                 .catch(error => console.error('Error fetching leagues:', error));
         }
 
-        function loadTeams(league) {
-            console.log('Fetching teams for league:', league);
-            fetch(`/api/teams?league=${encodeURIComponent(league)}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Teams fetched:', data);
-                    const select = document.getElementById('team');
-                    if (select) {
-                        select.innerHTML = '<option value="">All Teams</option>';
-                        data.forEach(team => {
-                            const option = document.createElement('option');
-                            option.value = team;
-                            option.textContent = team;
-                            select.appendChild(option);
-                        });
-                        sortSelectOptions(select);
-                        select.value = '';
-                    } else {
-                        console.error('Select element not found');
-                    }
-                })
-                .catch(error => console.error('Error fetching teams:', error));
-        }
+function loadTeams(league) {
+    console.log('Fetching teams for league:', league);
+    fetch(`/api/teams?league=${encodeURIComponent(league)}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Teams fetched:', data);
+            const teamSelect = document.getElementById('team');
+            const opponentSelect = document.getElementById('opponent');
+
+            if (teamSelect) {
+                teamSelect.innerHTML = '<option value="">All Teams</option>';
+                data.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.textContent = team;
+                    teamSelect.appendChild(option);
+                });
+                sortSelectOptions(teamSelect);
+                teamSelect.value = '';
+            } else {
+                console.error('Team select element not found');
+            }
+
+            if (opponentSelect) {
+                opponentSelect.innerHTML = '<option value="">All Teams</option>';
+                data.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.textContent = team;
+                    opponentSelect.appendChild(option);
+                });
+                sortSelectOptions(opponentSelect);
+                opponentSelect.value = '';
+            } else {
+                console.error('Opponent select element not found');
+            }
+        })
+        .catch(error => console.error('Error fetching teams:', error));
+}
 
         function showSection(section) {
             const sections = document.querySelectorAll('.section');
@@ -171,6 +189,7 @@
             const countrySelect = document.getElementById('country');
             const leagueSelect = document.getElementById('league');
             const teamSelect = document.getElementById('team');
+
 
             if (countrySelect) {
                 countrySelect.addEventListener('change', function() {
@@ -220,49 +239,182 @@
             return true;
         }
 
-            function handleFormSubmit(event) {
-                event.preventDefault(); // Prevent the default form submission
+function handleFormSubmit(event) {
+    event.preventDefault(); // Prevent the default form submission
 
-                // Collect form data
-                const formData = {
-                    country: document.getElementById('country') ? document.getElementById('country').value : '',
-                    league: document.getElementById('league') ? document.getElementById('league').value : '',
-                    team: document.getElementById('team') ? document.getElementById('team').value : '',
-                    sportbook: document.getElementById('sportbook') ? document.getElementById('sportbook').value : '',
-                    date_from: document.getElementById('date_from') ? document.getElementById('date_from').value : '',
-                    date_to: document.getElementById('date_to') ? document.getElementById('date_to').value : '',
-                    position: document.getElementById('where') ? document.getElementById('where').value : '',
-                    team1_win: document.getElementById('team1-win') ? document.getElementById('team1-win').value : '',
-                    team1_win_minus: document.getElementById('team1-win-minus') ? document.getElementById('team1-win-minus').value : '',
-                    team1_win_plus: document.getElementById('team1-win-plus') ? document.getElementById('team1-win-plus').value : '',
-                    team1_draw: document.getElementById('team1-draw') ? document.getElementById('team1-draw').value : '',
-                    team1_draw_minus: document.getElementById('team1-draw-minus') ? document.getElementById('team1-draw-minus').value : '',
-                    team1_draw_plus: document.getElementById('team1-draw-plus') ? document.getElementById('team1-draw-plus').value : '',
-                    team1_loss: document.getElementById('team1-loss') ? document.getElementById('team1-loss').value : '',
-                    team1_loss_minus: document.getElementById('team1-loss-minus') ? document.getElementById('team1-loss-minus').value : '',
-                    team1_loss_plus: document.getElementById('team1-loss-plus') ? document.getElementById('team1-loss-plus').value : '',
-                    team1_over_15: document.getElementById('team1-over-1.5') ? document.getElementById('team1-over-1.5').value : '',
-                    team1_over_15_minus: document.getElementById('team1-over-1.5-minus') ? document.getElementById('team1-over-1.5-minus').value : '',
-                    team1_over_15_plus: document.getElementById('team1-over-1.5-plus') ? document.getElementById('team1-over-1.5-plus').value : '',
-                    team1_over_25: document.getElementById('team1-over-2.5') ? document.getElementById('team1-over-2.5').value : '',
-                    team1_over_25_minus: document.getElementById('team1-over-2.5-minus') ? document.getElementById('team1-over-2.5-minus').value : '',
-                    team1_over_25_plus: document.getElementById('team1-over-2.5-plus') ? document.getElementById('team1-over-2.5-plus').value : ''
-                };
+    // Collect form data
+    const formData = {
+        country: document.getElementById('country') ? document.getElementById('country').value : '',
+        league: document.getElementById('league') ? document.getElementById('league').value : '',
+        team: document.getElementById('team') ? document.getElementById('team').value : '',
+        opponent: document.getElementById('opponent') ? document.getElementById('opponent').value : '',
+        sportbook: document.getElementById('sportbook') ? document.getElementById('sportbook').value : '',
+        date_from: document.getElementById('date_from') ? document.getElementById('date_from').value : '',
+        date_to: document.getElementById('date_to') ? document.getElementById('date_to').value : '',
+        position: document.getElementById('where') ? document.getElementById('where').value : '',
+        team1_win: document.getElementById('team1-win') ? document.getElementById('team1-win').value : '',
+        team1_win_minus: document.getElementById('team1-win-minus') ? document.getElementById('team1-win-minus').value : '',
+        team1_win_plus: document.getElementById('team1-win-plus') ? document.getElementById('team1-win-plus').value : '',
+        team1_draw: document.getElementById('team1-draw') ? document.getElementById('team1-draw').value : '',
+        team1_draw_minus: document.getElementById('team1-draw-minus') ? document.getElementById('team1-draw-minus').value : '',
+        team1_draw_plus: document.getElementById('team1-draw-plus') ? document.getElementById('team1-draw-plus').value : '',
+        team1_loss: document.getElementById('team1-loss') ? document.getElementById('team1-loss').value : '',
+        team1_loss_minus: document.getElementById('team1-loss-minus') ? document.getElementById('team1-loss-minus').value : '',
+        team1_loss_plus: document.getElementById('team1-loss-plus') ? document.getElementById('team1-loss-plus').value : '',
+        team1_over_15: document.getElementById('team1-over-1.5') ? document.getElementById('team1-over-1.5').value : '',
+        team1_over_15_minus: document.getElementById('team1-over-1.5-minus') ? document.getElementById('team1-over-1.5-minus').value : '',
+        team1_over_15_plus: document.getElementById('team1-over-1.5-plus') ? document.getElementById('team1-over-1.5-plus').value : '',
+        team1_over_25: document.getElementById('team1-over-2.5') ? document.getElementById('team1-over-2.5').value : '',
+        team1_over_25_minus: document.getElementById('team1-over-2.5-minus') ? document.getElementById('team1-over-2.5-minus').value : '',
+        team1_over_25_plus: document.getElementById('team1-over-2.5-plus') ? document.getElementById('team1-over-2.5-plus').value : ''
+    };
 
-                fetch('/process-form', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+    console.log('Form data:', formData); // Debugging form data
+
+    fetch('/process-form', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Success:', data);
+
+        // Update the page with response data
+        const output = document.getElementById('response-output');
+        if (output) {
+            if (Array.isArray(data)) {
+                output.innerHTML = generateTable(data, formData.position);
+            } else {
+                output.innerHTML = '<p style="color: red;">Ошибка: Данные не являются массивом</p>';
             }
+        } else {
+            console.error('Response output element not found');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+
+        // Display error on the page
+        const output = document.getElementById('response-output');
+        if (output) {
+            output.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+        } else {
+            console.error('Response output element not found');
+        }
+    });
+}
+
+function generateTable(matches, position) {
+    const teamLabel = position === 'HOME' ? 'TEAM' : 'OPPONENT';
+    const opponentLabel = position === 'HOME' ? 'OPPONENT' : 'TEAM';
+    const winLabel = position === 'HOME' ? 'WIN' : 'OPPONENT WIN';
+    const opponentWinLabel = position === 'HOME' ? 'OPPONENT WIN' : 'WIN';
+
+    function formatDiff(diffText) {
+        // Split the text into two parts
+        const [firstPart, secondPart] = diffText.split('<br><br>');
+        // Create a class for the second part based on its value
+        const getClass = (value) => value < 0 ? 'diff-negative' : 'diff-positive';
+        // Return formatted HTML with class applied to the second part
+        return `
+            ${firstPart}<br>
+            <span class="${getClass(parseFloat(secondPart))}">${secondPart}</span>
+        `;
+    }
+
+    let tableHTML = `
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.7em; /* Уменьшение шрифта в два раза */
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            tbody tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            tbody tr:hover {
+                background-color: #ddd;
+            }
+            .diff-positive {
+                background-color: #85e89d; /* Зеленый фон для положительного значения */
+            }
+            .diff-negative {
+                background-color: #f3a5a8; /* Красный фон для отрицательного значения */
+            }
+        </style>
+        <table>
+            <thead>
+                <tr>
+                    <th>DATE</th>
+                    <th>${teamLabel}</th>
+                    <th>${opponentLabel}</th>
+                    <th colspan="3">${winLabel}</th>
+                    <th colspan="3">${opponentWinLabel}</th>
+                    <th colspan="3">TO 2.5</th>
+                    <th>SCORE</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th>Open</th>
+                    <th>Close</th>
+                    <th>Diff.</th>
+                    <th>Open</th>
+                    <th>Close</th>
+                    <th>Diff.</th>
+                    <th>Open</th>
+                    <th>Close</th>
+                    <th>Diff.</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    matches.forEach(match => {
+        // Format the scores as "0 - 0"
+        const homeScore = match.home_score_ft != null ? match.home_score_ft.toFixed(0) : '0';
+        const awayScore = match.away_score_ft != null ? match.away_score_ft.toFixed(0) : '0';
+        const scoreText = `${homeScore} - ${awayScore}`;
+
+        tableHTML += `
+            <tr>
+                <td>${match.date || ''}</td>
+                <td>${match.team_home || ''}</td>
+                <td>${match.team_away || ''}</td>
+                <td>${match.win_home_open || ''}</td>
+                <td>${match.win_home_close || ''}</td>
+                <td>${formatDiff(match.win_home_diff || '')}</td>
+                <td>${match.win_away_open || ''}</td>
+                <td>${match.win_away_close || ''}</td>
+                <td>${formatDiff(match.win_away_diff || '')}</td>
+                <td>${match.total25_open || ''}</td>
+                <td>${match.total25_close || ''}</td>
+                <td>${formatDiff(match.total25_diff || '')}</td>
+                <td>${scoreText}</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += '</tbody></table>';
+    return tableHTML;
+}
     </script>
 {% endblock %}

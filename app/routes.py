@@ -7,7 +7,7 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds
 from app.email import send_email, send_password_reset_email
-from app.spare_func import count_odds_diff
+from app.spare_func import safe_float, count_odds_diff, format_date
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
@@ -286,32 +286,34 @@ def process_form():
     country = data.get('country')
     league = data.get('league')
     team = data.get('team')
+    opponent = data.get('opponent')
     sportbook = data.get('sportbook')
     date_from = data.get('date_from')
     date_to = data.get('date_to')
     position = data.get('position')
 
-    win_open = float(data.get('team1_win', 0))
-    win_open_minus = float(data.get('team1_win_minus', 0))
-    win_open_plus = float(data.get('team1_win_plus', 0))
+    win_open = safe_float(data.get('team1_win', 0))
+    win_open_minus = safe_float(data.get('team1_win_minus', 0))
+    win_open_plus = safe_float(data.get('team1_win_plus', 0))
 
-    draw_open = float(data.get('team1Draw', 0))
-    draw_open_minus = float(data.get('team1DrawMinus', 0))
-    draw_open_plus = float(data.get('team1DrawPlus', 0))
+    draw_open = safe_float(data.get('team1_draw', 0))
+    draw_open_minus = safe_float(data.get('team1_draw_minus', 0))
+    draw_open_plus = safe_float(data.get('team1_draw_plus', 0))
 
-    loss_open = float(data.get('team1Loss', 0))
-    loss_open_minus = float(data.get('team1LossMinus', 0))
-    loss_open_plus = float(data.get('team1LossPlus', 0))
+    loss_open = safe_float(data.get('team1_loss', 0))
+    loss_open_minus = safe_float(data.get('team1_loss_minus', 0))
+    loss_open_plus = safe_float(data.get('team1_loss_plus', 0))
 
-    over_1_5_open = float(data.get('team1Over15', 0))
-    over_1_5_open_minus = float(data.get('team1Over15Minus', 0))
-    over_1_5_open_plus = float(data.get('team1Over15Plus', 0))
+    over_1_5_open = safe_float(data.get('team1_over_15', 0))
+    over_1_5_open_minus = safe_float(data.get('team1_over_15_minus', 0))
+    over_1_5_open_plus = safe_float(data.get('team1_over_15_plus', 0))
 
-    over_2_5_open = float(data.get('team1Over25', 0))
-    over_2_5_open_minus = float(data.get('team1Over25Minus', 0))
-    over_2_5_open_plus = float(data.get('team1Over25Plus', 0))
+    over_2_5_open = safe_float(data.get('team1_over_25', 0))
+    over_2_5_open_minus = safe_float(data.get('team1_over_25_minus', 0))
+    over_2_5_open_plus = safe_float(data.get('team1_over_25_plus', 0))
 
-    print(date_from, date_to, position)
+    print(opponent ,date_from, date_to, position, over_1_5_open - over_1_5_open_minus,
+          over_1_5_open + over_1_5_open_plus ,over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus)
 
     # Convert date strings to datetime.date objects if provided
     if date_from:
@@ -352,45 +354,73 @@ def process_form():
         query = query.filter(ChampionshipsSoccer.league == league)
     if team and position == "HOME":
         query = query.filter(SoccerMain.team_home == team)
+        if opponent:
+            query = query.filter(SoccerMain.team_away == opponent)
     if team and position == "AWAY":
         query = query.filter(SoccerMain.team_away == team)
+        if opponent:
+            query = query.filter(SoccerMain.team_home == opponent)
 
     if date_from:
         query = query.filter(SoccerMain.match_date >= date_from)
     if date_to:
         query = query.filter(SoccerMain.match_date <= date_to)
 
-    if win_open is not None and win_open_minus is not None and win_open_plus is not None:
+    if win_open != 0 or win_open_minus != 0 or win_open_plus != 0:
         query = query.filter(selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus))
+
+    if draw_open != 0 or draw_open_minus != 0 or draw_open_plus != 0:
+        query = query.filter(selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus))
+
+    if loss_open != 0 or loss_open_minus != 0 or loss_open_plus != 0:
+        query = query.filter(selected_model.win_away_open.between(loss_open - loss_open_minus, loss_open + loss_open_plus))
+
+    if over_1_5_open != 0 or over_1_5_open_minus != 0 or over_1_5_open_plus != 0:
+        query = query.filter(selected_model.odds_1_5_open.between(over_1_5_open - over_1_5_open_minus,
+                                                                  over_1_5_open + over_1_5_open_plus))
+
+    if over_2_5_open != 0 or over_2_5_open_minus != 0 or over_2_5_open_plus != 0:
+        query = query.filter(selected_model.odds_2_5_open.between(over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus))
 
     results = query.all()
     response_list = []
-    print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus)
-    total_cases = 0
+    print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus,
+          draw_open - draw_open_minus, draw_open + draw_open_plus, loss_open - loss_open_minus, loss_open + loss_open_plus)
+
     for result in results:
         if result:
-            total_cases += 1
+            print(result)
+            win_home_diff = f"{count_odds_diff(result[0].win_home_open, result[0].win_home_close)[0]}<br><br>{count_odds_diff(result[0].win_home_open, result[0].win_home_close)[1]}"
+            win_away_diff = f"{count_odds_diff(result[0].win_away_open, result[0].win_away_close)[0]}<br><br>{count_odds_diff(result[0].win_away_open, result[0].win_away_close)[1]}"
+            total25_diff = f"{count_odds_diff(result[0].odds_2_5_open, result[0].odds_2_5_close)[0]}<br><br>{count_odds_diff(result[0].odds_2_5_open, result[0].odds_2_5_close)[1]}"
             match = {
-                'date': result[1].match_date,
+                'date': result[1].match_date.strftime('%Y-%m-%d'),
                 'team_home': result[1].team_home,
                 'team_away': result[1].team_away,
                 'home_score_ft': result[1].home_score_ft,
                 'away_score_ft': result[1].away_score_ft,
                 'win_home_open': result[0].win_home_open,
-                'win_home_close': result[0].win_home_close
+                'win_home_close': result[0].win_home_close,
+                'win_home_diff': win_home_diff,
+                'win_away_open': result[0].win_away_open,
+                'win_away_close': result[0].win_away_close,
+                'win_away_diff': win_away_diff,
+                'total25_open': result[0].odds_2_5_open,
+                'total25_close': result[0].odds_2_5_close,  # Change this line
+                'total25_diff': total25_diff
             }
             response_list.append(match)
 
-            print(f"{match['date']}. {match['team_home']} vs {match['team_away']}, "
-                  f"Score: {match['home_score_ft']}-{match['away_score_ft']}, Win Home Open:"
-                  f" {match['win_home_open']}, Win Home Close: {match['win_home_close']} "
-                  f"Diff:{count_odds_diff(match['win_home_open'], match['win_home_close'])[0]}  "
-                  f"{count_odds_diff(match['win_home_open'], match['win_home_close'])[1]} %")
-    print(total_cases)
+            # print(f"{match['date']}. {match['team_home']} vs {match['team_away']}, "
+            #       f"Score: {match['home_score_ft']}-{match['away_score_ft']}, WinOpen:"
+            #       f" {match['win_home_open']}, WinClose: {match['win_home_close']} LoseOpen:{match['win_away_open']} Loselose:{match['win_away_close']}")
+            print(match['total25_diff'])
+
+    print(len(response_list))
     if not response_list:
         response = {'error': 'No matching records found'}
     else:
         response = response_list
-
-    return jsonify(response)
+    response_list.reverse()
+    return jsonify(response_list)
 

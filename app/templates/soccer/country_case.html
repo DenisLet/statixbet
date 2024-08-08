@@ -23,6 +23,13 @@
                     </select>
                 </div>
                 <div>
+                    <label for="opponent">Opponent:</label><br>
+                    <select id="opponent" name="opponent">
+                        <option value="">Select a opponent team</option>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                <div>
                     <label for="sportbook">Sportbook:</label><br>
                     <select id="sportbook" name="sportbook">
                         <option value="1xbet">1xbet</option>
@@ -49,6 +56,10 @@
         </fieldset>
 
 <script>
+
+
+
+
     // Function to format date to yyyy-mm-dd
     function formatDate(date) {
         let d = new Date(date);
@@ -67,3 +78,4 @@
         document.getElementById('date_to').value = formatDate(new Date());
     });
 </script>
+<script src="/static/scripts.js"></script>
