@@ -5,9 +5,10 @@ from sqlalchemy import text
 from urllib.parse import urlsplit
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
-from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds
+from app.forms import SoccerLiveInput, SoccerLiveAdditionalInput, SoccerMainOddsInput, CountryLeageTeamBook
+from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds, UnibetOdds
 from app.email import send_email, send_password_reset_email
-from app.spare_func import safe_float, count_odds_diff, format_date
+from app.spare_func import safe_float, count_odds_diff
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
@@ -330,7 +331,8 @@ def process_form():
 
     sportbook_models = {
         '1xbet': XbetOdds,
-        'bet365': Bet365Odds
+        'bet365': Bet365Odds,
+        'unibet': UnibetOdds
     }
     selected_model = sportbook_models.get(sportbook.lower())
 
@@ -367,20 +369,20 @@ def process_form():
         query = query.filter(SoccerMain.match_date <= date_to)
 
     if win_open != 0 or win_open_minus != 0 or win_open_plus != 0:
-        query = query.filter(selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus))
+        query = query.filter(selected_model.win_home_open.between(win_open - abs(win_open_minus), win_open + abs(win_open_plus)))
 
     if draw_open != 0 or draw_open_minus != 0 or draw_open_plus != 0:
-        query = query.filter(selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus))
+        query = query.filter(selected_model.draw_open.between(draw_open - abs(draw_open_minus), draw_open + abs(draw_open_plus)))
 
     if loss_open != 0 or loss_open_minus != 0 or loss_open_plus != 0:
-        query = query.filter(selected_model.win_away_open.between(loss_open - loss_open_minus, loss_open + loss_open_plus))
+        query = query.filter(selected_model.win_away_open.between(loss_open - abs(loss_open_minus), loss_open + abs(loss_open_plus)))
 
     if over_1_5_open != 0 or over_1_5_open_minus != 0 or over_1_5_open_plus != 0:
-        query = query.filter(selected_model.odds_1_5_open.between(over_1_5_open - over_1_5_open_minus,
-                                                                  over_1_5_open + over_1_5_open_plus))
+        query = query.filter(selected_model.odds_1_5_open.between(over_1_5_open - abs(over_1_5_open_minus),
+                                                                  over_1_5_open + abs(over_1_5_open_plus)))
 
     if over_2_5_open != 0 or over_2_5_open_minus != 0 or over_2_5_open_plus != 0:
-        query = query.filter(selected_model.odds_2_5_open.between(over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus))
+        query = query.filter(selected_model.odds_2_5_open.between(over_2_5_open - abs(over_2_5_open_minus), over_2_5_open + abs(over_2_5_open_plus)))
 
     results = query.all()
     response_list = []
@@ -424,3 +426,19 @@ def process_form():
     response_list.reverse()
     return jsonify(response_list)
 
+@app.route('/soccer_live', methods=['GET', 'POST'])
+def soccer_live():
+    form = SoccerLiveInput()
+    additional_form = SoccerLiveAdditionalInput()
+    odds_form = SoccerMainOddsInput()
+    teams_form = CountryLeageTeamBook()
+    if form.validate_on_submit():
+        print(form.xg_t1.data, additional_form, odds_form)
+        # Обработка данных формы
+        return redirect(url_for('success'))  # перенаправление на другую страницу после успешной обработки формы
+    return render_template('soccer/soccer_live.html', form=form, additional_form=additional_form, odds_form=odds_form,
+                           teams_form=teams_form)
+
+@app.route('/success')
+def success():
+    return "Form submitted successfully!"

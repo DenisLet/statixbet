@@ -11,9 +11,5 @@ def count_odds_diff(old: float, new: float) -> (float, float):
     diff_percent = round((diff_value * 100 / new), 2)
     return -diff_value, diff_percent
 
-import datetime
-def format_date(date_string):
-    date_obj = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S %Z')
-    return date_obj.strftime('%Y-%m-%d')
 
 print(count_odds_diff(2.37, 2.572))

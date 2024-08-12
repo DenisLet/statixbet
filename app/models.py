@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, List
 import sqlalchemy as sa
 import sqlalchemy.orm as so
+from sqlalchemy.dialects.postgresql import ARRAY
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import db, login
@@ -115,3 +116,126 @@ class Bet365Odds(db.Model):
 
     def __repr__(self):
         return f'<Bet365Odds Match {self.match_id,self.win_home_open, self.win_home_close}>'
+
+
+class UnibetOdds(db.Model):
+    __tablename__ = 'unibet_odds'
+
+    match_id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    win_home_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_home_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    draw_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    win_away_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_1_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_open: so.Mapped[float] = so.mapped_column(sa.Float)
+    odds_2_5_close: so.Mapped[float] = so.mapped_column(sa.Float)
+
+    def __repr__(self):
+        return f'<UnibetOdds Match {self.match_id,self.win_home_open, self.win_home_close}>'
+
+
+
+class SoccerHalf1Stats(db.Model):
+    __tablename__ = 'soccer_half1_stats'
+
+    match_id: so.Mapped[int] = so.mapped_column(sa.Integer, primary_key=True)
+    home_xg: so.Mapped[float] = so.mapped_column(sa.Float)
+    home_possession: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_attempts: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_shots: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_corners: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_freekicks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_offsides: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_passes: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_throw_ins: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_fouls: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_yellow: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_tackles: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_dangerous_attacks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_xg: so.Mapped[float] = so.mapped_column(sa.Float)
+    away_possession: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_attempts: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_shots: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_corners: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_freekicks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_offsides: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_passes: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_throw_ins: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_fouls: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_yellow: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_tackles: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_dangerous_attacks: so.Mapped[int] = so.mapped_column(sa.Integer)
+
+    def __repr__(self):
+        return f'<SoccerHalf1Stats Match {self.match_id}>'
+
+
+class SoccerHalf2Stats(db.Model):
+    __tablename__ = 'soccer_half2_stats'
+
+    match_id: so.Mapped[int] = so.mapped_column(sa.Integer, primary_key=True)
+    home_xg: so.Mapped[float] = so.mapped_column(sa.Float)
+    home_possession: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_attempts: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_shots: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_corners: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_freekicks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_offsides: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_passes: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_throw_ins: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_fouls: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_yellow: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_tackles: so.Mapped[int] = so.mapped_column(sa.Integer)
+    home_dangerous_attacks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_xg: so.Mapped[float] = so.mapped_column(sa.Float)
+    away_possession: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_attempts: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_shots: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_corners: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_freekicks: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_offsides: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_passes: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_throw_ins: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_fouls: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_yellow: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_tackles: so.Mapped[int] = so.mapped_column(sa.Integer)
+    away_dangerous_attacks: so.Mapped[int] = so.mapped_column(sa.Integer)
+
+    def __repr__(self):
+        return f'<SoccerHalf1Stats Match {self.match_id}>'
+
+
+class SoccerTimeline(db.Model):
+    __tablename__ = 'soccer_timeline'
+
+    match_id: so.Mapped[int] = so.mapped_column(sa.Integer, primary_key=True)
+    home_goals_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_goals_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_red_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_red_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_disallowed_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_disallowed_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_second_yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_second_yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_red_2yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    home_red_2yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_goals_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_goals_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_red_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_red_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_disallowed_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_disallowed_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_second_yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_second_yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_red_2yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+    away_red_2yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
+
+    def __repr__(self):
+        return f"<SoccerTimeline match_id={self.match_id}>"
