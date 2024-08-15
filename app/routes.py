@@ -460,6 +460,7 @@ def soccer_live():
             'unibet': UnibetOdds
         }
         selected_model = sportbook_models.get(sportbook.lower())
+        print(sportbook)
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
@@ -469,16 +470,30 @@ def soccer_live():
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
+        # Фильтрация по коэффициентам закрытия и открытия, если данные введены
         win_close = odds_form.win_t1.data
-        win_minus = odds_form.win_t1_approx.data
-        win_plus = odds_form.win_t1_approx.data
+        win_close_plus = odds_form.win_t1_plus.data
+        win_close_minus = odds_form.win_t1_minus.data
+        win_open = odds_form.win_t1_open.data
+        win_open_minus = odds_form.win_t1_open_minus.data
+        win_open_plus = odds_form.win_t1_open_plus.data
+        print(win_close, win_close_plus, win_close_minus, win_open, win_open_plus, win_open_minus)
 
-        # Фильтрация по коэффициентам, если данные введены
-        if win_close is not None and win_minus is not None and win_plus is not None:
+        if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             query = query.join(
-                Bet365Odds, SoccerTimeline.match_id == Bet365Odds.match_id
+                selected_model, SoccerTimeline.match_id == selected_model.match_id
             ).filter(
-                Bet365Odds.win_home_close.between(win_close - win_minus, win_close + win_plus)
+                selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
+            )
+        else:
+            # Обеспечьте выполнение join для win_open, если win_close не используется
+            query = query.join(
+                selected_model, SoccerTimeline.match_id == selected_model.match_id
+            )
+
+        if win_open is not None and win_open_minus is not None and win_open_plus is not None:
+            query = query.filter(
+                selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
             )
 
         # Группировка и сортировка
@@ -501,15 +516,20 @@ def soccer_live():
             SoccerTimeline.score_t1_h2.label('team1_score_h2'),
             func.count().label('count')
         ).join(
-            Bet365Odds, SoccerTimeline.match_id == Bet365Odds.match_id
+            selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).filter(
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
-        if win_close is not None and win_minus is not None and win_plus is not None:
+        if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team1_entries = team1_entries.filter(
-                Bet365Odds.win_home_close.between(win_close - win_minus, win_close + win_plus)
+                selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
+            )
+
+        if win_open is not None and win_open_minus is not None and win_open_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
             )
 
         team1_entries = team1_entries.group_by(
@@ -530,15 +550,20 @@ def soccer_live():
             SoccerTimeline.score_t2_h2.label('team2_score_h2'),
             func.count().label('count')
         ).join(
-            Bet365Odds, SoccerTimeline.match_id == Bet365Odds.match_id
+            selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).filter(
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
-        if win_close is not None and win_minus is not None and win_plus is not None:
+        if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team2_entries = team2_entries.filter(
-                Bet365Odds.win_home_close.between(win_close - win_minus, win_close + win_plus)
+                selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
+            )
+
+        if win_open is not None and win_open_minus is not None and win_open_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
             )
 
         team2_entries = team2_entries.group_by(
@@ -562,9 +587,10 @@ def soccer_live():
             team2_goal_over0 = [entry[2] / 100 for entry in team2_percentages if entry[0] == 0]
 
             print(team1_goal_over0, team2_goal_over0)
-
-            overall_probability_over0 = round(1 - team1_goal_over0[0] * team2_goal_over0[0], 4)
-
+            try:
+                overall_probability_over0 = round(1 - team1_goal_over0[0] * team2_goal_over0[0], 4)
+            except:
+                overall_probability_over0 = 0.00001
         else:
             overall_probability_over0 = 0.00001
 

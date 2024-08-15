@@ -139,8 +139,11 @@ class SoccerLiveAdditionalInput(FlaskForm):
 
 class SoccerMainOddsInput(FlaskForm):
     win_t1 = FloatField('Win 1', validators=[Optional()])
+    win_t1_plus = FloatField('+/-', validators=[Optional()])
+    win_t1_minus = FloatField('+/-', validators=[Optional()])
     win_t1_open = FloatField('Win 1', validators=[Optional()])
-    win_t1_approx = FloatField('+/-', validators=[Optional()])
+    win_t1_open_plus = FloatField('Win 1', validators=[Optional()])
+    win_t1_open_minus = FloatField('Win 1', validators=[Optional()])
     draw = FloatField('Draw', validators=[Optional()])
     draw_open = FloatField('Draw', validators=[Optional()])
     draw_approx = FloatField('+/-', validators=[Optional()])
