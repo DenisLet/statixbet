@@ -1,0 +1,38 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Goals in 2nd Half - Overall</title>
+</head>
+<body>
+    <h3>Результаты</h3>
+    <p>Количество всех случаев: {{ total_entries }}</p>
+
+    <h4>Количество забитых голов:</h4>
+    <ul>
+        <li>Команда 1: {{ team1_goals }}</li>
+        <li>Команда 2: {{ team2_goals }}</li>
+    </ul>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Сумма счета во втором тайме</th>
+                <th>Количество записей</th>
+                <th>Процент</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score, count, percentage in percentages %}
+                <tr>
+                    <td>{{ score }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ percentage|round(2) }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('soccer_live') }}">Вернуться на главную</a>
+</body>
+</html>

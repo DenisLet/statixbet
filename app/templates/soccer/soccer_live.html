@@ -73,6 +73,17 @@
             background-color: red;
             color: white;
         }
+
+        td select {
+    width: 120px;
+    padding: 0.2rem;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+    display: inline-block;
+}
+
     </style>
 </head>
 <body>
@@ -99,18 +110,18 @@
             <tbody>
                 <tr>
                     <td>Score</td>
-                    <td><input type="text" name="score_t1" value="{{ form.score_t1.data or ''}}"></td>
+                    <td><input type="text" name="score_t1" value="{{ form.score_t1.data or 0 }}"></td>
                     <td></td>
                     <td></td>
-                    <td><input type="text" name="score_t2" value="{{ form.score_t2.data or ''}}"></td>
+                    <td><input type="text" name="score_t2" value="{{ form.score_t2.data or 0 }}"></td>
                     <td></td>
                     <td></td>
                 </tr>
                 <tr>
                     <td>xG</td>
-                    <td><input type="number" name="xg_t1" value="{{ form.xg_t1.data }}"></td>
-                    <td><input type="number" name="xg_t1_plus" value="{{ form.xg_t1_plus.data }}"></td>
-                    <td><input type="number" name="xg_t1_minus" value="{{ form.xg_t1_minus.data }}"></td>
+                    <td><input type="number" name="xg_t1" value="{{ form.xg_t1.data }}" step="any"></td>
+                    <td><input type="number" name="xg_t1_plus" value="{{ form.xg_t1_plus.data }}" step="any"></td>
+                    <td><input type="number" name="xg_t1_minus" value="{{ form.xg_t1_minus.data }}" step="any"></td>
                     <td><input type="number" name="xg_t2" value="{{ form.xg_t2.data }}"></td>
                     <td><input type="number" name="xg_t2_plus" value="{{ form.xg_t2_plus.data }}"></td>
                     <td><input type="number" name="xg_t2_minus" value="{{ form.xg_t2_minus.data }}"></td>
@@ -254,11 +265,16 @@
         <!-- Win 1 -->
         <tr>
             <td>Win 1</td>
-            <td>{{ odds_form.win_t1_open }}  {{ odds_form.win_t1 }}</td>
-            <td>{{ odds_form.win_t1_approx }}</td>
+            <td>
+                <input type="number" name="win_t1_open" value="{{ odds_form.win_t1_open.data }}" step="0.01"/>
+                <input type="number" name="win_t1" value="{{ odds_form.win_t1.data }}" step="0.01"/>
+            </td>
+            <td>
+                <input type="number" name="win_t1_approx" value="{{ odds_form.win_t1_approx.data }}" step="0.01"/>
+            </td>
             <td>
                 Country:
-                <select name="country">
+                <select name="country" id="country-select">
                     {% for country_id, country_name in country_choices %}
                         <option value="{{ country_id }}">{{ country_name }}</option>
                     {% endfor %}
@@ -269,44 +285,76 @@
         <!-- Draw -->
         <tr>
             <td>Draw</td>
-            <td>{{ odds_form.draw_open }}  {{ odds_form.draw }}</td>
-            <td>{{ odds_form.draw_approx }}</td>
+            <td>
+                <input type="number" step="0.01" name="draw_open" value="{{ odds_form.draw_open.data }}" />
+                <input type="number" step="0.01" name="draw" value="{{ odds_form.draw.data }}" />
+            </td>
+            <td>
+                <input type="number" step="0.01" name="draw_approx" value="{{ odds_form.draw_approx.data }}" />
+            </td>
             <td>
                 League:
-                <input type="text" name="league" placeholder="Enter league" value="{{ teams_form.league.data }}">
+                <select name="league" id="league-select">
+                    <!-- Лиги будут добавлены динамически через JavaScript -->
+                </select>
             </td>
         </tr>
 
         <!-- Win 2 -->
         <tr>
             <td>Win 2</td>
-            <td>{{ odds_form.win_t2_open }}  {{ odds_form.win_t2 }}</td>
-            <td>{{ odds_form.win_t2_approx }}</td>
+            <td>
+                <input type="number" step="0.01" name="win_t2_open" value="{{ odds_form.win_t2_open.data }}" />
+                <input type="number" step="0.01" name="win_t2" value="{{ odds_form.win_t2.data }}" />
+            </td>
+            <td>
+                <input type="number" step="0.01" name="win_t2_approx" value="{{ odds_form.win_t2_approx.data }}" />
+            </td>
             <td>
                 Team 1:
-                <input type="text" name="team_home" placeholder="Enter team 1" value="{{ teams_form.team_home.data }}">
+                <select id="team_home" name="team_home">
+                    <!-- Здесь будут динамически добавлены опции -->
+                </select>
             </td>
         </tr>
 
         <!-- Over 1.5 -->
         <tr>
             <td>Over 1.5</td>
-            <td>{{ odds_form.total_15_open }}  {{ odds_form.total_15 }}</td>
-            <td>{{ odds_form.total_15_plus }} {{ odds_form.total_15_minus }}</td>
+            <td>
+                <input type="number" step="0.01" name="total_15_open" step="0.01" value="{{ odds_form.total_15_open.data }}" />
+                <input type="number" step="0.01" name="total_15" step="0.01" value="{{ odds_form.total_15.data }}" />
+            </td>
+            <td>
+                <input type="number" step="0.01" name="total_15_plus" step="0.01" value="{{ odds_form.total_15_plus.data }}" />
+                <input type="number" step="0.01" name="total_15_minus" step="0.01" value="{{ odds_form.total_15_minus.data }}" />
+            </td>
             <td>
                 Team 2:
-                <input type="text" name="team_away" placeholder="Enter team 2" value="{{ teams_form.team_away.data }}">
+                <select id="team_away" name="team_away">
+                    <!-- Здесь будут динамически добавлены опции -->
+                </select>
             </td>
         </tr>
 
         <!-- Over 2.5 -->
         <tr>
             <td>Over 2.5</td>
-            <td>{{ odds_form.total_25_open }}  {{ odds_form.total_25 }}</td>
-            <td>{{ odds_form.total_25_plus }} {{ odds_form.total_25_minus }}</td>
             <td>
-                Sportbook:
-                <input type="text" name="sportsbook" placeholder="Enter sportsbook" value="{{ teams_form.sportsbook.data }}">
+                <input type="number" step="0.01" name="total_25_open" value="{{ odds_form.total_25_open.data }}" />
+                <input type="number" step="0.01" name="total_25" value="{{ odds_form.total_25.data }}" />
+            </td>
+            <td>
+                <input type="number" step="0.01" name="total_25_plus" value="{{ odds_form.total_25_plus.data }}" />
+                <input type="number" step="0.01" name="total_25_minus" value="{{ odds_form.total_25_minus.data }}" />
+            </td>
+            <td>
+                <label for="sportsbook" style="display: inline-block; margin-right: 10px;">S.book:</label>
+                <select id="sportsbook" name="sportsbook" style="display: inline-block;">
+                    <option value="1xbet">1xbet</option>
+                    <option value="bet365" selected>bet365</option>
+                    <option value="unibet">unibet</option>
+                </select>
             </td>
         </tr>
     </tbody>
@@ -317,6 +365,65 @@
         </div>
 
     </form>
+{% if percentages %}
+    <h3> cases: {{ total_entries }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Goals 2 half</th>
+                <th>Cases</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score, count, percentage in percentages %}
+                <tr>
+                    <td>{{ score }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ percentage|round(2) }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% if overall_probability %}
+    <h3>Accurate probability of goal in 2 half: {{ (overall_probability * 100)|round(2) }}%</h3>
+
+{% endif %}
+
+{% if team1_percentages or team2_percentages %}
+    <h3>Teams Results</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Team1</th>
+                <th>Cases</th>
+                <th>Team1 %</th>
+                <th>Team2</th>
+                <th>Cases)</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set team1_max = team1_percentages|length %}
+            {% set team2_max = team2_percentages|length %}
+            {% set max_length = team1_max if team1_max > team2_max else team2_max %}
+
+            {% for i in range(max_length) %}
+                <tr>
+                    <td>{{ team1_percentages[i][0] if i < team1_max else '' }}</td>
+                    <td>{{ team1_percentages[i][1] if i < team1_max else '' }}</td>
+                    <td>{{ team1_percentages[i][2]|round(2) if i < team1_max else '' }}%</td>
+
+                    <td>{{ team2_percentages[i][0] if i < team2_max else '' }}</td>
+                    <td>{{ team2_percentages[i][1] if i < team2_max else '' }}</td>
+                    <td>{{ team2_percentages[i][2]|round(2) if i < team2_max else '' }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 </body>
 <script>
 function resetTable(tableId) {
@@ -326,6 +433,62 @@ function resetTable(tableId) {
         inputs[i].value = ''; // Сбрасывает значение каждого input в таблице
     }
 }
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countrySelect = document.getElementById('country-select');
+    const leagueSelect = document.getElementById('league-select');
+    const teamHomeSelect = document.getElementById('team_home');
+    const teamAwaySelect = document.getElementById('team_away');
+
+    // Обработка изменения выбора страны
+    countrySelect.addEventListener('change', function() {
+        const countryId = this.value;
+
+        fetch(`/get_leagues_live?country_id=${countryId}`)
+            .then(response => response.json())
+            .then(data => {
+                leagueSelect.innerHTML = ''; // Очистка списка лиг
+                data.forEach(([id, name]) => {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.text = name;
+                    leagueSelect.appendChild(option);
+                });
+
+                // Очистка списков команд при изменении страны
+                teamHomeSelect.innerHTML = '<option>Select Team</option>';
+                teamAwaySelect.innerHTML = '<option>Select Team</option>';
+            })
+            .catch(error => console.error('Error fetching leagues:', error));
+    });
+
+leagueSelect.addEventListener('change', function() {
+    const leagueId = this.value;
+
+    fetch(`/get_teams_live?league_id=${leagueId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // Проверьте в консоли, что данные поступают
+            // Очистка списков команд
+            teamHomeSelect.innerHTML = '<option>Select Team</option>';
+            teamAwaySelect.innerHTML = '<option>Select Team</option>';
+            data.forEach(team => {
+                const optionHome = document.createElement('option');
+                optionHome.value = team;
+                optionHome.text = team;
+                teamHomeSelect.appendChild(optionHome);
+
+                const optionAway = document.createElement('option');
+                optionAway.value = team;
+                optionAway.text = team;
+                teamAwaySelect.appendChild(optionAway);
+            });
+        })
+        .catch(error => console.error('Error fetching teams:', error));
+});
+});
 </script>
 </html>
 {% endblock %}

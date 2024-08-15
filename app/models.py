@@ -237,5 +237,7 @@ class SoccerTimeline(db.Model):
     away_red_2yellow_h1: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
     away_red_2yellow_h2: so.Mapped[List[int]] = so.mapped_column(ARRAY(sa.Integer))
 
-    def __repr__(self):
-        return f"<SoccerTimeline match_id={self.match_id}>"
+    score_t1_h1: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    score_t2_h1: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    score_t1_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    score_t2_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
