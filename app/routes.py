@@ -439,7 +439,6 @@ def soccer_live():
         SoccerMain, ChampionshipsSoccer.id == SoccerMain.league_id
     ).distinct().order_by(ChampionshipsSoccer.country.asc()).all()
 
-    # Сбор уникальных стран в словарь
     country_choices = [(None, 'All Countries')] + [(country[0], country[0]) for country in countries]
 
     percentages = []
@@ -452,7 +451,6 @@ def soccer_live():
         score_t1_form = form.score_t1.data
         score_t2_form = form.score_t2.data
 
-        # Определение выбранного букмекера
         sportbook = teams_form.sportsbook.data
         sportbook_models = {
             '1xbet': XbetOdds,
@@ -468,32 +466,44 @@ def soccer_live():
         ).filter(
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
+        ).join(
+            selected_model, SoccerTimeline.match_id == selected_model.match_id
         )
 
-        # Фильтрация по коэффициентам закрытия и открытия, если данные введены
+        # Фильтрация по коэффициентам закрытия для победы и ничьи
         win_close = odds_form.win_t1.data
         win_close_plus = odds_form.win_t1_plus.data
         win_close_minus = odds_form.win_t1_minus.data
+        draw_close = odds_form.draw.data
+        draw_close_plus = odds_form.draw_plus.data
+        draw_close_minus = odds_form.draw_minus.data
+        print(draw_close, draw_close_plus, draw_close_minus)
+
+        if win_close is not None and win_close_minus is not None and win_close_plus is not None:
+            query = query.filter(
+                selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
+            )
+        if draw_close is not None and draw_close_minus is not None and draw_close_plus is not None:
+            query = query.filter(
+                selected_model.draw_close.between(draw_close - abs(draw_close_minus), draw_close + abs(draw_close_plus))
+            )
+
+        # Фильтрация по коэффициентам открытия для победы и ничьи
         win_open = odds_form.win_t1_open.data
         win_open_minus = odds_form.win_t1_open_minus.data
         win_open_plus = odds_form.win_t1_open_plus.data
-        print(win_close, win_close_plus, win_close_minus, win_open, win_open_plus, win_open_minus)
-
-        if win_close is not None and win_close_minus is not None and win_close_plus is not None:
-            query = query.join(
-                selected_model, SoccerTimeline.match_id == selected_model.match_id
-            ).filter(
-                selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
-            )
-        else:
-            # Обеспечьте выполнение join для win_open, если win_close не используется
-            query = query.join(
-                selected_model, SoccerTimeline.match_id == selected_model.match_id
-            )
+        draw_open = odds_form.draw_open.data
+        draw_open_plus = odds_form.draw_open_plus.data
+        draw_open_minus = odds_form.draw_open_minus.data
+        print(draw_open, draw_open_plus, draw_open_minus)
 
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             query = query.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
+            )
+        if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
+            query = query.filter(
+                selected_model.draw_open.between(draw_open - abs(draw_open_minus), draw_open + abs(draw_open_plus))
             )
 
         # Группировка и сортировка
@@ -506,12 +516,12 @@ def soccer_live():
         total_entries = sum(entry.count for entry in soccer_timeline_entries)  # Подсчет всех матчей
 
         if soccer_timeline_entries:
-            # Расчет процентного соотношения для каждой суммы
             percentages = [
                 (entry.total_score_h2, entry.count, (entry.count / total_entries) * 100)
                 for entry in soccer_timeline_entries
             ]
 
+        # Аналогичная фильтрация и расчеты для команд
         team1_entries = db.session.query(
             SoccerTimeline.score_t1_h2.label('team1_score_h2'),
             func.count().label('count')
@@ -526,10 +536,18 @@ def soccer_live():
             team1_entries = team1_entries.filter(
                 selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
             )
+        if draw_close is not None and draw_close_minus is not None and draw_close_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.draw_close.between(draw_close - draw_close_minus, draw_close + draw_close_plus)
+            )
 
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             team1_entries = team1_entries.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
+            )
+        if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus)
             )
 
         team1_entries = team1_entries.group_by(
@@ -539,7 +557,6 @@ def soccer_live():
         ).all()
 
         if team1_entries:
-            # Расчет процентного соотношения для команды 1
             total_team1_entries = sum(entry.count for entry in team1_entries)
             team1_percentages = [
                 (entry.team1_score_h2, entry.count, (entry.count / total_team1_entries) * 100)
@@ -560,10 +577,18 @@ def soccer_live():
             team2_entries = team2_entries.filter(
                 selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
             )
+        if draw_close is not None and draw_close_minus is not None and draw_close_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.draw_close.between(draw_close - draw_close_minus, draw_close + draw_close_plus)
+            )
 
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             team2_entries = team2_entries.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
+            )
+        if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus)
             )
 
         team2_entries = team2_entries.group_by(
@@ -573,33 +598,45 @@ def soccer_live():
         ).all()
 
         if team2_entries:
-            # Расчет процентного соотношения для команды 2
             total_team2_entries = sum(entry.count for entry in team2_entries)
             team2_percentages = [
                 (entry.team2_score_h2, entry.count, (entry.count / total_team2_entries) * 100)
                 for entry in team2_entries
             ]
-
         # Расчет вероятности того, что хотя бы одна команда забьет гол
         if team1_percentages and team2_percentages:
             # Преобразование процентных данных в вероятности
             team1_goal_over0 = [entry[2] / 100 for entry in team1_percentages if entry[0] == 0]
             team2_goal_over0 = [entry[2] / 100 for entry in team2_percentages if entry[0] == 0]
 
-            print(team1_goal_over0, team2_goal_over0)
+            print(f"Team 1 Goal Over 0: {team1_goal_over0}")
+            print(f"Team 2 Goal Over 0: {team2_goal_over0}")
+
             try:
-                overall_probability_over0 = round(1 - team1_goal_over0[0] * team2_goal_over0[0], 4)
-            except:
+                if team1_goal_over0 and team2_goal_over0:
+                    overall_probability_over0 = round(1 - team1_goal_over0[0] * team2_goal_over0[0], 4)
+                else:
+                    overall_probability_over0 = 0.00001
+            except Exception as e:
+                print(f"Error calculating probability: {e}")
                 overall_probability_over0 = 0.00001
         else:
             overall_probability_over0 = 0.00001
 
-    # Передача данных в шаблон
-    return render_template('soccer/soccer_live.html', form=form, additional_form=additional_form,
-                           odds_form=odds_form, teams_form=teams_form, country_choices=country_choices,
-                           percentages=percentages, team1_percentages=team1_percentages,
-                           team2_percentages=team2_percentages, total_entries=total_entries,
-                           overall_probability=overall_probability_over0)
+    return render_template(
+        'soccer/soccer_live.html',
+        form=form,
+        additional_form=additional_form,
+        odds_form=odds_form,
+        teams_form=teams_form,
+        percentages=percentages,
+        team1_percentages=team1_percentages,
+        team2_percentages=team2_percentages,
+        country_choices=country_choices,
+        total_entries=total_entries,
+        overall_probability_over0=overall_probability_over0
+    )
+
 
 
 @app.route('/get_leagues_live', methods=['GET'])
