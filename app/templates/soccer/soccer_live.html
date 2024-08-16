@@ -370,7 +370,7 @@
                 <label for="sportsbook" style="display: inline-block; margin-right: 10px;">S.book:</label>
                 <select id="sportsbook" name="sportsbook" style="display: inline-block;">
                     <option value="1xbet">1xbet</option>
-                    <option value="bet365" selected>bet365</option>
+                    <option value="bet365" >bet365</option>
                     <option value="unibet">unibet</option>
                 </select>
             </td>
@@ -448,54 +448,84 @@
 
 </body>
 <script>
-function resetTable(tableId) {
-    var table = document.getElementById(tableId);
-    var inputs = table.getElementsByTagName('input');
-    for (var i = 0; i < inputs.length; i++) {
-        inputs[i].value = ''; // Сбрасывает значение каждого input в таблице
-    }
-}
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+// Функция для сохранения выбранных значений в localStorage
+function saveSelectedValues() {
     const countrySelect = document.getElementById('country-select');
     const leagueSelect = document.getElementById('league-select');
     const teamHomeSelect = document.getElementById('team_home');
     const teamAwaySelect = document.getElementById('team_away');
+    const sportsbookSelect = document.getElementById('sportsbook');
 
-    // Обработка изменения выбора страны
-    countrySelect.addEventListener('change', function() {
-        const countryId = this.value;
+    localStorage.setItem('selectedCountry', countrySelect.value);
+    localStorage.setItem('selectedLeague', leagueSelect.value);
+    localStorage.setItem('selectedTeamHome', teamHomeSelect.value);
+    localStorage.setItem('selectedTeamAway', teamAwaySelect.value);
+    localStorage.setItem('selectedSportsbook', sportsbookSelect.value);
+}
 
-        fetch(`/get_leagues_live?country_id=${countryId}`)
-            .then(response => response.json())
-            .then(data => {
-                leagueSelect.innerHTML = ''; // Очистка списка лиг
-                data.forEach(([id, name]) => {
-                    const option = document.createElement('option');
-                    option.value = id;
-                    option.text = name;
-                    leagueSelect.appendChild(option);
-                });
+// Функция для восстановления значений из localStorage
+function restoreSelectedValues() {
+    const countrySelect = document.getElementById('country-select');
+    const leagueSelect = document.getElementById('league-select');
+    const teamHomeSelect = document.getElementById('team_home');
+    const teamAwaySelect = document.getElementById('team_away');
+    const sportsbookSelect = document.getElementById('sportsbook');
 
-                // Очистка списков команд при изменении страны
-                teamHomeSelect.innerHTML = '<option>Select Team</option>';
-                teamAwaySelect.innerHTML = '<option>Select Team</option>';
-            })
-            .catch(error => console.error('Error fetching leagues:', error));
-    });
+    const selectedCountry = localStorage.getItem('selectedCountry');
+    const selectedLeague = localStorage.getItem('selectedLeague');
+    const selectedTeamHome = localStorage.getItem('selectedTeamHome');
+    const selectedTeamAway = localStorage.getItem('selectedTeamAway');
+    const selectedSportsbook = localStorage.getItem('selectedSportsbook');
 
-leagueSelect.addEventListener('change', function() {
-    const leagueId = this.value;
+    if (selectedCountry) {
+        countrySelect.value = selectedCountry;
+    }
+    if (selectedLeague) {
+        leagueSelect.value = selectedLeague;
+    }
+    if (selectedTeamHome) {
+        teamHomeSelect.value = selectedTeamHome;
+    }
+    if (selectedTeamAway) {
+        teamAwaySelect.value = selectedTeamAway;
+    }
+    if (selectedSportsbook) {
+        sportsbookSelect.value = selectedSportsbook;
+    }
+}
 
+// Функция для обновления списка лиг
+function updateLeagues(countryId) {
+    const leagueSelect = document.getElementById('league-select');
+    fetch(`/get_leagues_live?country_id=${countryId}`)
+        .then(response => response.json())
+        .then(data => {
+            leagueSelect.innerHTML = '<option value="">Select League</option>';
+            data.forEach(([id, name]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.text = name;
+                leagueSelect.appendChild(option);
+            });
+
+            const selectedLeague = localStorage.getItem('selectedLeague');
+            if (selectedLeague) {
+                leagueSelect.value = selectedLeague;
+                updateTeams(selectedLeague); // Загружаем команды для выбранной лиги
+            }
+        })
+        .catch(error => console.error('Error fetching leagues:', error));
+}
+
+// Функция для обновления списка команд
+function updateTeams(leagueId) {
+    const teamHomeSelect = document.getElementById('team_home');
+    const teamAwaySelect = document.getElementById('team_away');
     fetch(`/get_teams_live?league_id=${leagueId}`)
         .then(response => response.json())
         .then(data => {
-            console.log(data); // Проверьте в консоли, что данные поступают
-            // Очистка списков команд
-            teamHomeSelect.innerHTML = '<option>Select Team</option>';
-            teamAwaySelect.innerHTML = '<option>Select Team</option>';
+            teamHomeSelect.innerHTML = '<option value="">Select Team</option>';
+            teamAwaySelect.innerHTML = '<option value="">Select Team</option>';
             data.forEach(team => {
                 const optionHome = document.createElement('option');
                 optionHome.value = team;
@@ -507,9 +537,55 @@ leagueSelect.addEventListener('change', function() {
                 optionAway.text = team;
                 teamAwaySelect.appendChild(optionAway);
             });
+
+            const selectedTeamHome = localStorage.getItem('selectedTeamHome');
+            const selectedTeamAway = localStorage.getItem('selectedTeamAway');
+            if (selectedTeamHome) {
+                teamHomeSelect.value = selectedTeamHome;
+            }
+            if (selectedTeamAway) {
+                teamAwaySelect.value = selectedTeamAway;
+            }
         })
         .catch(error => console.error('Error fetching teams:', error));
-});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    restoreSelectedValues(); // Восстановление сохраненных значений при загрузке страницы
+
+    const countrySelect = document.getElementById('country-select');
+    const leagueSelect = document.getElementById('league-select');
+    const teamHomeSelect = document.getElementById('team_home');
+    const teamAwaySelect = document.getElementById('team_away');
+    const sportsbookSelect = document.getElementById('sportsbook');
+
+    const selectedCountry = localStorage.getItem('selectedCountry');
+    const selectedLeague = localStorage.getItem('selectedLeague');
+    if (selectedCountry) {
+        updateLeagues(selectedCountry); // Загружаем лиги для выбранной страны
+    }
+    if (selectedLeague) {
+        updateTeams(selectedLeague); // Загружаем команды для выбранной лиги
+    }
+
+    // Обработка изменения выбора страны
+    countrySelect.addEventListener('change', function() {
+        const countryId = this.value;
+        saveSelectedValues();
+        updateLeagues(countryId); // Обновляем лиги при изменении страны
+    });
+
+    // Обработка изменения выбора лиги
+    leagueSelect.addEventListener('change', function() {
+        const leagueId = this.value;
+        saveSelectedValues();
+        updateTeams(leagueId); // Обновляем команды при изменении лиги
+    });
+
+    // Сохранение выбранных значений при изменении команд и букмекерской конторы
+    teamHomeSelect.addEventListener('change', saveSelectedValues);
+    teamAwaySelect.addEventListener('change', saveSelectedValues);
+    sportsbookSelect.addEventListener('change', saveSelectedValues);
 });
 </script>
 </html>

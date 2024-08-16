@@ -450,6 +450,13 @@ def soccer_live():
     if form.validate_on_submit():
         score_t1_form = form.score_t1.data
         score_t2_form = form.score_t2.data
+        country = teams_form.country.data
+        league = teams_form.league.data
+        team1 = teams_form.team_home.data
+        team2 = teams_form.team_away.data
+        print(country, league, team1, team2)
+        print(team1, team2)
+        print(type(team1), type(team2))
 
         sportbook = teams_form.sportsbook.data
         sportbook_models = {
@@ -470,7 +477,31 @@ def soccer_live():
             selected_model, SoccerTimeline.match_id == selected_model.match_id
         )
 
-        # Фильтрация по коэффициентам закрытия для победы и ничьи
+        if country and country != 'None':
+            query = query.join(
+                SoccerMain, SoccerTimeline.match_id == SoccerMain.match_id
+            ).join(
+                ChampionshipsSoccer, SoccerMain.league_id == ChampionshipsSoccer.id
+            ).filter(
+                ChampionshipsSoccer.country == country
+            )
+
+        if league and league != 'null':
+            query = query.filter(
+                SoccerMain.league_id == league
+            )
+
+        if team1 and team1 != '':
+            query = query.filter(
+                SoccerMain.team_home == team1
+            )
+
+        if team2 and team2 != '':
+            query = query.filter(
+                SoccerMain.team_away == team2
+            )
+
+
         win_close = odds_form.win_t1.data
         win_close_plus = odds_form.win_t1_plus.data
         win_close_minus = odds_form.win_t1_minus.data
@@ -486,8 +517,6 @@ def soccer_live():
         total25_close = odds_form.total_25.data
         total25_close_plus = odds_form.total_25_plus.data
         total25_close_minus = odds_form.total_25_minus.data
-
-        print(draw_close, draw_close_plus, draw_close_minus)
 
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             query = query.filter(
@@ -584,6 +613,30 @@ def soccer_live():
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
+        if country and country != 'None':
+            team1_entries = team1_entries.join(
+                SoccerMain, SoccerTimeline.match_id == SoccerMain.match_id
+            ).join(
+                ChampionshipsSoccer, SoccerMain.league_id == ChampionshipsSoccer.id
+            ).filter(
+                ChampionshipsSoccer.country == country
+            )
+
+        if league and league != 'null':
+            team1_entries = team1_entries.filter(
+                SoccerMain.league_id == league
+            )
+
+        if team1 and team1 != 'None':
+            team1_entries = team1_entries.filter(
+                SoccerMain.team_home == team1
+            )
+
+        if team2 and team2 != 'None':
+            team1_entries = team1_entries.filter(
+                SoccerMain.team_away == team2
+            )
+
         # Фильтрация по коэффициентам закрытия для команды 1
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team1_entries = team1_entries.filter(
@@ -658,6 +711,30 @@ def soccer_live():
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
+
+        if country and country != 'None':
+            team2_entries = team2_entries.join(
+                SoccerMain, SoccerTimeline.match_id == SoccerMain.match_id
+            ).join(
+                ChampionshipsSoccer, SoccerMain.league_id == ChampionshipsSoccer.id
+            ).filter(
+                ChampionshipsSoccer.country == country
+            )
+
+        if league and league != 'null':
+            team2_entries = team2_entries.filter(
+                SoccerMain.league_id == league
+            )
+
+        if team1 and team1 != '':
+            team2_entries = team2_entries.filter(
+                SoccerMain.team_home == team1
+            )
+
+        if team2 and team2 != '':
+            team2_entries = team2_entries.filter(
+                SoccerMain.team_away == team2
+            )
 
         # Фильтрация по коэффициентам закрытия для команды 2
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
@@ -762,9 +839,9 @@ def soccer_live():
 @app.route('/get_leagues_live', methods=['GET'])
 def get_leagues_live():
     country_id = request.args.get('country_id')
-    print(country_id)
+    print(f"Received country_id: {country_id}")
 
-    if not country_id:
+    if not country_id or country_id == 'None':
         return jsonify([])
 
     # Получение всех уникальных идентификаторов лиг, где есть матчи и фильтрация по выбранной стране
@@ -778,26 +855,21 @@ def get_leagues_live():
     return jsonify(league_choices)
 
 
-
 @app.route('/get_teams_live', methods=['GET'])
 def get_teams_live():
     league_id = request.args.get('league_id')
-    print(league_id)
+    print(f"Received league_id: {league_id}")
 
-    if not league_id:
-        return jsonify([])
+    if not league_id or league_id == 'null':
+        return jsonify([])  # Вернуть пустой список или другой ответ
 
-    # Получение команд из таблицы SoccerMain, фильтрация по выбранной лиге и сортировка по алфавиту
-    teams = db.session.query(SoccerMain.team_home).join(
-        ChampionshipsSoccer, SoccerMain.league_id == ChampionshipsSoccer.id
-    ).filter(
+    # Получение уникальных команд в рамках лиги
+    teams = db.session.query(SoccerMain.team_home).filter(
         SoccerMain.league_id == league_id
     ).distinct().order_by(SoccerMain.team_home.asc()).all()
 
-    team_choices = [team.team_home for team in teams]
-    print(team_choices)
+    team_choices = [(team.team_home,) for team in teams]
     return jsonify(team_choices)
-
 
 @app.route('/success')
 def success():
