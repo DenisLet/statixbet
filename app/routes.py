@@ -477,6 +477,16 @@ def soccer_live():
         draw_close = odds_form.draw.data
         draw_close_plus = odds_form.draw_plus.data
         draw_close_minus = odds_form.draw_minus.data
+        lose_close = odds_form.win_t2.data
+        lose_close_plus = odds_form.win_t2_plus.data
+        lose_close_minus = odds_form.win_t2_minus.data
+        total15_close = odds_form.total_15.data
+        total15_close_plus = odds_form.total_15_plus.data
+        total15_close_minus = odds_form.total_15_minus.data
+        total25_close = odds_form.total_25.data
+        total25_close_plus = odds_form.total_25_plus.data
+        total25_close_minus = odds_form.total_25_minus.data
+
         print(draw_close, draw_close_plus, draw_close_minus)
 
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
@@ -487,6 +497,22 @@ def soccer_live():
             query = query.filter(
                 selected_model.draw_close.between(draw_close - abs(draw_close_minus), draw_close + abs(draw_close_plus))
             )
+        if lose_close is not None and lose_close_minus is not None and lose_close_plus is not None:
+            query = query.filter(
+                selected_model.win_away_close.between(lose_close - lose_close_minus, lose_close + lose_close_plus)
+            )
+
+        if total15_close is not None and total15_close_minus is not None and total15_close_plus is not None:
+            query = query.filter(
+                selected_model.odds_1_5_close.between(total15_close - total15_close_minus,
+                                                      total15_close + total15_close_plus)
+            )
+
+        if total25_close is not None and total25_close_minus is not None and total25_close_plus is not None:
+            query = query.filter(
+                selected_model.odds_2_5_close.between(total25_close - total25_close_minus,
+                                                      total25_close + total25_close_plus)
+            )
 
         # Фильтрация по коэффициентам открытия для победы и ничьи
         win_open = odds_form.win_t1_open.data
@@ -495,8 +521,18 @@ def soccer_live():
         draw_open = odds_form.draw_open.data
         draw_open_plus = odds_form.draw_open_plus.data
         draw_open_minus = odds_form.draw_open_minus.data
+        lose_open = odds_form.win_t2_open.data
+        lose_open_plus = odds_form.win_t2_open_plus.data
+        lose_open_minus = odds_form.win_t2_open_minus.data
+        total15_open = odds_form.total_15_open.data
+        total15_open_plus = odds_form.total_15_open_plus.data
+        total15_open_minus = odds_form.total_15_open_minus.data
+        total25_open = odds_form.total_25_open.data
+        total25_open_plus = odds_form.total_25_open_plus.data
+        total25_open_minus = odds_form.total_25_open_minus.data
         print(draw_open, draw_open_plus, draw_open_minus)
 
+        # Фильтрация по коэффициентам открытия для победы, ничьи и поражения
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             query = query.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
@@ -504,6 +540,22 @@ def soccer_live():
         if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
             query = query.filter(
                 selected_model.draw_open.between(draw_open - abs(draw_open_minus), draw_open + abs(draw_open_plus))
+            )
+        if lose_open is not None and lose_open_minus is not None and lose_open_plus is not None:
+            query = query.filter(
+                selected_model.win_away_open.between(lose_open - lose_open_minus, lose_open + lose_open_plus)
+            )
+
+        if total15_open is not None and total15_open_minus is not None and total15_open_plus is not None:
+            query = query.filter(
+                selected_model.odds_1_5_open.between(total15_open - total15_open_minus,
+                                                     total15_open + total15_open_plus)
+            )
+
+        if total25_open is not None and total25_open_minus is not None and total25_open_plus is not None:
+            query = query.filter(
+                selected_model.odds_2_5_open.between(total25_open - total25_open_minus,
+                                                     total25_open + total25_open_plus)
             )
 
         # Группировка и сортировка
@@ -532,6 +584,7 @@ def soccer_live():
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
+        # Фильтрация по коэффициентам закрытия для команды 1
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team1_entries = team1_entries.filter(
                 selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
@@ -540,7 +593,24 @@ def soccer_live():
             team1_entries = team1_entries.filter(
                 selected_model.draw_close.between(draw_close - draw_close_minus, draw_close + draw_close_plus)
             )
+        if lose_close is not None and lose_close_minus is not None and lose_close_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.win_away_close.between(lose_close - lose_close_minus, lose_close + lose_close_plus)
+            )
 
+        if total15_close is not None and total15_close_minus is not None and total15_close_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.odds_1_5_close.between(total15_close - total15_close_minus,
+                                                      total15_close + total15_close_plus)
+            )
+
+        if total25_close is not None and total25_close_minus is not None and total25_close_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.odds_2_5_close.between(total25_close - total25_close_minus,
+                                                      total25_close + total25_close_plus)
+            )
+
+        # Фильтрация по коэффициентам открытия для команды 1
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             team1_entries = team1_entries.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
@@ -548,6 +618,22 @@ def soccer_live():
         if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
             team1_entries = team1_entries.filter(
                 selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus)
+            )
+        if lose_open is not None and lose_open_minus is not None and lose_open_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.win_away_open.between(lose_open - lose_open_minus, lose_open + lose_open_plus)
+            )
+
+        if total15_open is not None and total15_open_minus is not None and total15_open_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.odds_1_5_open.between(total15_open - total15_open_minus,
+                                                     total15_open + total15_open_plus)
+            )
+
+        if total25_open is not None and total25_open_minus is not None and total25_open_plus is not None:
+            team1_entries = team1_entries.filter(
+                selected_model.odds_2_5_open.between(total25_open - total25_open_minus,
+                                                     total25_open + total25_open_plus)
             )
 
         team1_entries = team1_entries.group_by(
@@ -573,6 +659,7 @@ def soccer_live():
             SoccerTimeline.score_t2_h1 == score_t2_form
         )
 
+        # Фильтрация по коэффициентам закрытия для команды 2
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team2_entries = team2_entries.filter(
                 selected_model.win_home_close.between(win_close - win_close_minus, win_close + win_close_plus)
@@ -581,7 +668,24 @@ def soccer_live():
             team2_entries = team2_entries.filter(
                 selected_model.draw_close.between(draw_close - draw_close_minus, draw_close + draw_close_plus)
             )
+        if lose_close is not None and lose_close_minus is not None and lose_close_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.win_away_close.between(lose_close - lose_close_minus, lose_close + lose_close_plus)
+            )
 
+        if total15_close is not None and total15_close_minus is not None and total15_close_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.odds_1_5_close.between(total15_close - total15_close_minus,
+                                                      total15_close + total15_close_plus)
+            )
+
+        if total25_close is not None and total25_close_minus is not None and total25_close_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.odds_2_5_close.between(total25_close - total25_close_minus,
+                                                      total25_close + total25_close_plus)
+            )
+
+        # Фильтрация по коэффициентам открытия для команды 2
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
             team2_entries = team2_entries.filter(
                 selected_model.win_home_open.between(win_open - win_open_minus, win_open + win_open_plus)
@@ -589,6 +693,22 @@ def soccer_live():
         if draw_open is not None and draw_open_minus is not None and draw_open_plus is not None:
             team2_entries = team2_entries.filter(
                 selected_model.draw_open.between(draw_open - draw_open_minus, draw_open + draw_open_plus)
+            )
+        if lose_open is not None and lose_open_minus is not None and lose_open_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.win_away_open.between(lose_open - lose_open_minus, lose_open + lose_open_plus)
+            )
+
+        if total15_open is not None and total15_open_minus is not None and total15_open_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.odds_1_5_open.between(total15_open - total15_open_minus,
+                                                     total15_open + total15_open_plus)
+            )
+
+        if total25_open is not None and total25_open_minus is not None and total25_open_plus is not None:
+            team2_entries = team2_entries.filter(
+                selected_model.odds_2_5_open.between(total25_open - total25_open_minus,
+                                                     total25_open + total25_open_plus)
             )
 
         team2_entries = team2_entries.group_by(
