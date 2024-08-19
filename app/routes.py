@@ -520,13 +520,6 @@ def soccer_live():
         offsides_t2_plus = additional_form.offsides_t2_plus.data
         offsides_t2_minus = additional_form.offsides_t2_minus.data
 
-        offsides_t1 = additional_form.offsides_t1.data
-        offsides_t1_plus = additional_form.offsides_t1_plus.data
-        offsides_t1_minus = additional_form.offsides_t1_minus.data
-        offsides_t2 = additional_form.offsides_t2.data
-        offsides_t2_plus = additional_form.offsides_t2_plus.data
-        offsides_t2_minus = additional_form.offsides_t2_minus.data
-
         fouls_t1 = additional_form.fouls_t1.data
         fouls_t1_plus = additional_form.fouls_t1_plus.data
         fouls_t1_minus = additional_form.fouls_t1_minus.data
@@ -620,7 +613,100 @@ def soccer_live():
             )
 
 
+        if ongoal_t1 is not None and ongoal_t1_minus is not None and ongoal_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_shots.between(ongoal_t1 - ongoal_t1_minus, ongoal_t1 + ongoal_t1_plus)
+            )
 
+        if ongoal_t2 is not None and ongoal_t2_minus is not None and ongoal_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_shots.between(ongoal_t2 - ongoal_t2_minus, ongoal_t2 + ongoal_t2_plus)
+            )
+
+
+        if poss_t1 is not None and poss_t1_minus is not None and poss_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_possession.between(poss_t1 - poss_t1_minus, poss_t1 + poss_t1_plus)
+            )
+
+        if poss_t2 is not None and poss_t2_minus is not None and poss_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_possession.between(poss_t2 - poss_t2_minus, poss_t2 + poss_t2_plus)
+            )
+
+
+        if corners_t1 is not None and corners_t1_minus is not None and corners_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_corners.between(corners_t1 - corners_t1_minus, corners_t1 + corners_t1_plus)
+            )
+
+        if corners_t2 is not None and corners_t2_minus is not None and corners_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_corners.between(corners_t2 - corners_t2_minus, corners_t2 + corners_t2_plus)
+            )
+
+
+        if attacks_t1 is not None and attacks_t1_minus is not None and attacks_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_dangerous_attacks.between(attacks_t1 - attacks_t1_minus, attacks_t1 + attacks_t1_plus)
+            )
+
+        if attacks_t2 is not None and attacks_t2_minus is not None and attacks_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_dangerous_attacks.between(attacks_t2 - attacks_t2_minus, attacks_t2 + attacks_t2_plus)
+            )
+
+
+        if fkicks_t1 is not None and fkicks_t1_minus is not None and fkicks_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_freekicks.between(fkicks_t1 - fkicks_t1_minus, fkicks_t1 + fkicks_t1_plus)
+            )
+
+        if fkicks_t2 is not None and fkicks_t2_minus is not None and fkicks_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_freekicks.between(fkicks_t2 - fkicks_t2_minus, fkicks_t2 + fkicks_t2_plus)
+            )
+
+
+        if throwins_t1 is not None and throwins_t1_minus is not None and throwins_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_throw_ins.between(throwins_t1 - throwins_t1_minus, throwins_t1 + throwins_t1_plus)
+            )
+
+        if throwins_t2 is not None and throwins_t2_minus is not None and throwins_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_throw_ins.between(throwins_t2 - throwins_t2_minus, throwins_t2 + throwins_t2_plus)
+            )
+
+        if offsides_t1 is not None and offsides_t1_minus is not None and offsides_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_offsides.between(offsides_t1 - offsides_t1_minus, offsides_t1 + offsides_t1_plus)
+            )
+
+        if offsides_t2 is not None and offsides_t2_minus is not None and offsides_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_offsides.between(offsides_t2 - offsides_t2_minus, offsides_t2 + offsides_t2_plus)
+            )
+
+        if fouls_t1 is not None and fouls_t1_minus is not None and fouls_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_fouls.between(fouls_t1 - fouls_t1_minus, fouls_t1 + fouls_t1_plus)
+            )
+
+        if fouls_t2 is not None and fouls_t2_minus is not None and fouls_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_fouls.between(fouls_t2 - fouls_t2_minus, fouls_t2 + fouls_t2_plus)
+            )
+
+        if yellows_t1 is not None and yellows_t1_minus is not None and yellows_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_yellow.between(yellows_t1 - yellows_t1_minus, yellows_t1 + yellows_t1_plus)
+            )
+
+        if yellows_t2 is not None and yellows_t2_minus is not None and yellows_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_yellow.between(yellows_t2 - yellows_t2_minus, yellows_t2 + yellows_t2_plus)
+            )
 
         win_close = odds_form.win_t1.data
         win_close_plus = odds_form.win_t1_plus.data
@@ -708,8 +794,6 @@ def soccer_live():
                                                      total25_open + total25_open_plus)
             )
 
-
-
         # Группировка и сортировка
         soccer_timeline_entries = query.group_by(
             'total_score_h2'
@@ -776,7 +860,6 @@ def soccer_live():
                 SoccerHalf1Stats.away_xg.between(xg_t2 - xg_t2_minus, xg_t2 + xg_t2_plus)
             )
 
-
         if shots_t1 is not None and shots_t1_minus is not None and shots_t1_plus is not None:
             team1_entries = team1_entries.filter(
                 SoccerHalf1Stats.home_attempts.between(shots_t1 - shots_t1_minus, shots_t1 + shots_t1_plus)
@@ -786,6 +869,97 @@ def soccer_live():
         if shots_t2 is not None and shots_t2_minus is not None and shots_t2_plus is not None:
             team1_entries = team1_entries.filter(
                 SoccerHalf1Stats.away_attempts.between(shots_t2 - shots_t2_minus, shots_t2 + shots_t2_plus)
+            )
+
+        if ongoal_t1 is not None and ongoal_t1_minus is not None and ongoal_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_shots.between(ongoal_t1 - ongoal_t1_minus, ongoal_t1 + ongoal_t1_plus)
+            )
+
+        if ongoal_t2 is not None and ongoal_t2_minus is not None and ongoal_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_shots.between(ongoal_t2 - ongoal_t2_minus, ongoal_t2 + ongoal_t2_plus)
+            )
+
+
+        if poss_t1 is not None and poss_t1_minus is not None and poss_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_possession.between(poss_t1 - poss_t1_minus, poss_t1 + poss_t1_plus)
+            )
+
+        if poss_t2 is not None and poss_t2_minus is not None and poss_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_possession.between(poss_t2 - poss_t2_minus, poss_t2 + poss_t2_plus)
+            )
+
+        if corners_t1 is not None and corners_t1_minus is not None and corners_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_corners.between(corners_t1 - corners_t1_minus, corners_t1 + corners_t1_plus)
+            )
+
+        if corners_t2 is not None and corners_t2_minus is not None and corners_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_corners.between(corners_t2 - corners_t2_minus, corners_t2 + corners_t2_plus)
+            )
+
+        if attacks_t1 is not None and attacks_t1_minus is not None and attacks_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_dangerous_attacks.between(attacks_t1 - attacks_t1_minus, attacks_t1 + attacks_t1_plus)
+            )
+
+        if attacks_t2 is not None and attacks_t2_minus is not None and attacks_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_dangerous_attacks.between(attacks_t2 - attacks_t2_minus, attacks_t2 + attacks_t2_plus)
+            )
+
+        if fkicks_t1 is not None and fkicks_t1_minus is not None and fkicks_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_freekicks.between(fkicks_t1 - fkicks_t1_minus, fkicks_t1 + fkicks_t1_plus)
+            )
+
+        if fkicks_t2 is not None and fkicks_t2_minus is not None and fkicks_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_freekicks.between(fkicks_t2 - fkicks_t2_minus, fkicks_t2 + fkicks_t2_plus)
+            )
+
+        if throwins_t1 is not None and throwins_t1_minus is not None and throwins_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_throw_ins.between(throwins_t1 - throwins_t1_minus, throwins_t1 + throwins_t1_plus)
+            )
+
+        if throwins_t2 is not None and throwins_t2_minus is not None and throwins_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_throw_ins.between(throwins_t2 - throwins_t2_minus, throwins_t2 + throwins_t2_plus)
+            )
+
+        if offsides_t1 is not None and offsides_t1_minus is not None and offsides_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_offsides.between(offsides_t1 - offsides_t1_minus, offsides_t1 + offsides_t1_plus)
+            )
+
+        if offsides_t2 is not None and offsides_t2_minus is not None and offsides_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_offsides.between(offsides_t2 - offsides_t2_minus, offsides_t2 + offsides_t2_plus)
+            )
+
+        if fouls_t1 is not None and fouls_t1_minus is not None and fouls_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_fouls.between(fouls_t1 - fouls_t1_minus, fouls_t1 + fouls_t1_plus)
+            )
+
+        if fouls_t2 is not None and fouls_t2_minus is not None and fouls_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_fouls.between(fouls_t2 - fouls_t2_minus, fouls_t2 + fouls_t2_plus)
+            )
+
+        if yellows_t1 is not None and yellows_t1_minus is not None and yellows_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_yellow.between(yellows_t1 - yellows_t1_minus, yellows_t1 + yellows_t1_plus)
+            )
+
+        if yellows_t2 is not None and yellows_t2_minus is not None and yellows_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_yellow.between(yellows_t2 - yellows_t2_minus, yellows_t2 + yellows_t2_plus)
             )
 
 
@@ -842,12 +1016,6 @@ def soccer_live():
                                                      total25_open + total25_open_plus)
             )
 
-
-        # Фильтрация по значениям xG для команды 1
-        if xg_t1 is not None and xg_t1_minus is not None and xg_t1_plus is not None:
-            team1_entries = team1_entries.filter(
-                SoccerHalf1Stats.home_xg.between(xg_t1 - xg_t1_minus, xg_t1 + xg_t1_plus)
-            )
 
         team1_entries = team1_entries.group_by(
             'team1_score_h2'
@@ -927,6 +1095,98 @@ def soccer_live():
             team2_entries = team2_entries.filter(
                 SoccerHalf1Stats.away_attempts.between(shots_t2 - shots_t2_minus, shots_t2 + shots_t2_plus)
             )
+
+        if ongoal_t1 is not None and ongoal_t1_minus is not None and ongoal_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_shots.between(ongoal_t1 - ongoal_t1_minus, ongoal_t1 + ongoal_t1_plus)
+            )
+
+        if ongoal_t2 is not None and ongoal_t2_minus is not None and ongoal_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_shots.between(ongoal_t2 - ongoal_t2_minus, ongoal_t2 + ongoal_t2_plus)
+            )
+
+        if poss_t1 is not None and poss_t1_minus is not None and poss_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_possession.between(poss_t1 - poss_t1_minus, poss_t1 + poss_t1_plus)
+            )
+
+        if poss_t2 is not None and poss_t2_minus is not None and poss_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_possession.between(poss_t2 - poss_t2_minus, poss_t2 + poss_t2_plus)
+            )
+
+        if corners_t1 is not None and corners_t1_minus is not None and corners_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_corners.between(corners_t1 - corners_t1_minus, corners_t1 + corners_t1_plus)
+            )
+
+        if corners_t2 is not None and corners_t2_minus is not None and corners_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_corners.between(corners_t2 - corners_t2_minus, corners_t2 + corners_t2_plus)
+            )
+
+        if attacks_t1 is not None and attacks_t1_minus is not None and attacks_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_dangerous_attacks.between(attacks_t1 - attacks_t1_minus, attacks_t1 + attacks_t1_plus)
+            )
+
+        if attacks_t2 is not None and attacks_t2_minus is not None and attacks_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_dangerous_attacks.between(attacks_t2 - attacks_t2_minus, attacks_t2 + attacks_t2_plus)
+            )
+
+        if fkicks_t1 is not None and fkicks_t1_minus is not None and fkicks_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_freekicks.between(fkicks_t1 - fkicks_t1_minus, fkicks_t1 + fkicks_t1_plus)
+            )
+
+        if fkicks_t2 is not None and fkicks_t2_minus is not None and fkicks_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_freekicks.between(fkicks_t2 - fkicks_t2_minus, fkicks_t2 + fkicks_t2_plus)
+            )
+
+        if throwins_t1 is not None and throwins_t1_minus is not None and throwins_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_throw_ins.between(throwins_t1 - throwins_t1_minus, throwins_t1 + throwins_t1_plus)
+            )
+
+        if throwins_t2 is not None and throwins_t2_minus is not None and throwins_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_throw_ins.between(throwins_t2 - throwins_t2_minus, throwins_t2 + throwins_t2_plus)
+            )
+
+        if offsides_t1 is not None and offsides_t1_minus is not None and offsides_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_offsides.between(offsides_t1 - offsides_t1_minus, offsides_t1 + offsides_t1_plus)
+            )
+
+        if offsides_t2 is not None and offsides_t2_minus is not None and offsides_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_offsides.between(offsides_t2 - offsides_t2_minus, offsides_t2 + offsides_t2_plus)
+            )
+
+        if fouls_t1 is not None and fouls_t1_minus is not None and fouls_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_fouls.between(fouls_t1 - fouls_t1_minus, fouls_t1 + fouls_t1_plus)
+            )
+
+        if fouls_t2 is not None and fouls_t2_minus is not None and fouls_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_fouls.between(fouls_t2 - fouls_t2_minus, fouls_t2 + fouls_t2_plus)
+            )
+
+        if yellows_t1 is not None and yellows_t1_minus is not None and yellows_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_yellow.between(yellows_t1 - yellows_t1_minus, yellows_t1 + yellows_t1_plus)
+            )
+
+        if yellows_t2 is not None and yellows_t2_minus is not None and yellows_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_yellow.between(yellows_t2 - yellows_t2_minus, yellows_t2 + yellows_t2_plus)
+            )
+
+
 
         # Фильтрация по коэффициентам закрытия для команды 2
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
