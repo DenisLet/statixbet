@@ -83,6 +83,9 @@
     color: #333;
     display: inline-block;
 }
+.full-width-button {
+    width: 100%;
+}
 
     </style>
 </head>
@@ -379,7 +382,7 @@
 </table>
 </div>
         <div>
-            {{ form.submit(class_='button') }}
+            {{ form.submit(class_='button full-width-button') }}
         </div>
 
     </form>
@@ -448,6 +451,28 @@
 
 </body>
 <script>
+function resetTable(tableId) {
+    const table = document.getElementById(tableId);
+
+    // Здесь можно добавить логику сброса параметров таблицы,
+    // например, очистить все значения в input, select или других элементах таблицы.
+
+    // Пример сброса значений в input полях внутри таблицы
+    const inputs = table.querySelectorAll('input');
+    inputs.forEach(input => input.value = '');
+
+    // Пример сброса значений в select полях внутри таблицы
+    const selects = table.querySelectorAll('select');
+    selects.forEach(select => select.selectedIndex = 0);
+
+    // Дополнительно можно очищать локальное хранилище или обновлять данные
+    localStorage.removeItem('selectedCountry');
+    localStorage.removeItem('selectedLeague');
+    localStorage.removeItem('selectedTeamHome');
+    localStorage.removeItem('selectedTeamAway');
+    localStorage.removeItem('selectedSportsbook');
+}
+
 // Функция для сохранения выбранных значений в localStorage
 function saveSelectedValues() {
     const countrySelect = document.getElementById('country-select');
