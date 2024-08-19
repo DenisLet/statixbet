@@ -7,8 +7,9 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.forms import SoccerLiveInput, SoccerLiveAdditionalInput, SoccerMainOddsInput, CountryLeageTeamBook
 from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds, UnibetOdds, SoccerTimeline
+from app.models import SoccerHalf1Stats
 from app.email import send_email, send_password_reset_email
-from app.spare_func import safe_float, count_odds_diff
+from app.spare_func import safe_float, count_odds_diff, get_inputed_stats
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
@@ -441,6 +442,7 @@ def soccer_live():
 
     country_choices = [(None, 'All Countries')] + [(country[0], country[0]) for country in countries]
 
+
     percentages = []
     team1_percentages = []
     team2_percentages = []
@@ -454,9 +456,95 @@ def soccer_live():
         league = teams_form.league.data
         team1 = teams_form.team_home.data
         team2 = teams_form.team_away.data
-        print(country, league, team1, team2)
-        print(team1, team2)
-        print(type(team1), type(team2))
+        """stats section"""
+        xg_t1 = form.xg_t1.data
+        xg_t1_plus = form.xg_t1_plus.data
+        xg_t1_minus = form.xg_t1_minus.data
+        xg_t2 = form.xg_t2.data
+        xg_t2_plus = form.xg_t2_plus.data
+        xg_t2_minus = form.xg_t2_minus.data
+
+        shots_t1 = form.shots_t1.data
+        shots_t1_plus = form.shots_t1_plus.data
+        shots_t1_minus = form.shots_t1_minus.data
+        shots_t2 = form.shots_t2.data
+        shots_t2_plus = form.shots_t2_plus.data
+        shots_t2_minus = form.shots_t2_minus.data
+
+        ongoal_t1 = form.on_goal_t1.data
+        ongoal_t1_plus = form.on_goal_t1_plus.data
+        ongoal_t1_minus = form.on_goal_t1_minus.data
+        ongoal_t2 = form.on_goal_t2.data
+        ongoal_t2_plus = form.on_goal_t2_plus.data
+        ongoal_t2_minus = form.on_goal_t2_minus.data
+
+        poss_t1 = form.possesion_t1.data
+        poss_t1_plus = form.possesion_t1_plus.data
+        poss_t1_minus = form.possesion_t1_minus.data
+        poss_t2 = form.possesion_t2.data
+        poss_t2_plus = form.possesion_t2_plus.data
+        poss_t2_minus = form.possesion_t2_minus.data
+
+        corners_t1 = form.corners_t1.data
+        corners_t1_plus = form.corners_t1_plus.data
+        corners_t1_minus = form.corners_t1_minus.data
+        corners_t2 = form.corners_t2.data
+        corners_t2_plus = form.corners_t2_plus.data
+        corners_t2_minus = form.corners_t2_minus.data
+
+        attacks_t1 = form.attacks_t1.data
+        attacks_t1_plus = form.attacks_t1_plus.data
+        attacks_t1_minus = form.attacks_t1_minus.data
+        attacks_t2 = form.attacks_t2.data
+        attacks_t2_plus = form.attacks_t2_plus.data
+        attacks_t2_minus = form.attacks_t2_minus.data
+
+        fkicks_t1 = additional_form.freekicks_t1.data
+        fkicks_t1_plus = additional_form.freekicks_t1_plus.data
+        fkicks_t1_minus = additional_form.freekicks_t1_minus.data
+        fkicks_t2 = additional_form.freekicks_t2.data
+        fkicks_t2_plus = additional_form.freekicks_t2_plus.data
+        fkicks_t2_minus = additional_form.freekicks_t2_minus.data
+
+        throwins_t1 = additional_form.throw_ins_t1.data
+        throwins_t1_plus = additional_form.throw_ins_t1_plus.data
+        throwins_t1_minus = additional_form.throw_ins_t1_minus.data
+        throwins_t2 = additional_form.throw_ins_t2.data
+        throwins_t2_plus = additional_form.throw_ins_t2_plus.data
+        throwins_t2_minus = additional_form.throw_ins_t2_minus.data
+
+        offsides_t1 = additional_form.offsides_t1.data
+        offsides_t1_plus = additional_form.offsides_t1_plus.data
+        offsides_t1_minus = additional_form.offsides_t1_minus.data
+        offsides_t2 = additional_form.offsides_t2.data
+        offsides_t2_plus = additional_form.offsides_t2_plus.data
+        offsides_t2_minus = additional_form.offsides_t2_minus.data
+
+        offsides_t1 = additional_form.offsides_t1.data
+        offsides_t1_plus = additional_form.offsides_t1_plus.data
+        offsides_t1_minus = additional_form.offsides_t1_minus.data
+        offsides_t2 = additional_form.offsides_t2.data
+        offsides_t2_plus = additional_form.offsides_t2_plus.data
+        offsides_t2_minus = additional_form.offsides_t2_minus.data
+
+        fouls_t1 = additional_form.fouls_t1.data
+        fouls_t1_plus = additional_form.fouls_t1_plus.data
+        fouls_t1_minus = additional_form.fouls_t1_minus.data
+        fouls_t2 = additional_form.fouls_t2.data
+        fouls_t2_plus = additional_form.fouls_t2_plus.data
+        fouls_t2_minus = additional_form.fouls_t2_minus.data
+
+        yellows_t1 = additional_form.yellows_t1.data
+        yellows_t1_plus = additional_form.yellows_t1_plus.data
+        yellows_t1_minus = additional_form.yellows_t1_minus.data
+        yellows_t2 = additional_form.yellows_t2.data
+        yellows_t2_plus = additional_form.yellows_t2_plus.data
+        yellows_t2_minus = additional_form.yellows_t2_minus.data
+
+
+        print(country, type(country))
+        if country == 'None':
+            country = team1 = team2 = ''
 
         sportbook = teams_form.sportsbook.data
         sportbook_models = {
@@ -475,6 +563,8 @@ def soccer_live():
             SoccerTimeline.score_t2_h1 == score_t2_form
         ).join(
             selected_model, SoccerTimeline.match_id == selected_model.match_id
+        ).join(
+            SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
         )
 
         if country and country != 'None':
@@ -485,6 +575,9 @@ def soccer_live():
             ).filter(
                 ChampionshipsSoccer.country == country
             )
+        else:
+            # Ограничение при отсутствии фильтрации по стране
+            query = query.distinct()
 
         if league and league != 'null':
             query = query.filter(
@@ -500,6 +593,33 @@ def soccer_live():
             query = query.filter(
                 SoccerMain.team_away == team2
             )
+
+        '''stats queries'''
+        # Фильтрация по xG для команды 1
+        if xg_t1 is not None and xg_t1_minus is not None and xg_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_xg.between(xg_t1 - xg_t1_minus, xg_t1 + xg_t1_plus)
+            )
+
+        # Фильтрация по xG для команды 2
+        if xg_t2 is not None and xg_t2_minus is not None and xg_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_xg.between(xg_t2 - xg_t2_minus, xg_t2 + xg_t2_plus)
+            )
+
+
+        if shots_t1 is not None and shots_t1_minus is not None and shots_t1_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.home_attempts.between(shots_t1 - shots_t1_minus, shots_t1 + shots_t1_plus)
+            )
+
+        # Фильтрация по xG для команды 2
+        if shots_t2 is not None and shots_t2_minus is not None and shots_t2_plus is not None:
+            query = query.filter(
+                SoccerHalf1Stats.away_attempts.between(shots_t2 - shots_t2_minus, shots_t2 + shots_t2_plus)
+            )
+
+
 
 
         win_close = odds_form.win_t1.data
@@ -517,6 +637,7 @@ def soccer_live():
         total25_close = odds_form.total_25.data
         total25_close_plus = odds_form.total_25_plus.data
         total25_close_minus = odds_form.total_25_minus.data
+
 
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             query = query.filter(
@@ -587,6 +708,8 @@ def soccer_live():
                                                      total25_open + total25_open_plus)
             )
 
+
+
         # Группировка и сортировка
         soccer_timeline_entries = query.group_by(
             'total_score_h2'
@@ -608,6 +731,8 @@ def soccer_live():
             func.count().label('count')
         ).join(
             selected_model, SoccerTimeline.match_id == selected_model.match_id
+        ).join(
+            SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
         ).filter(
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
@@ -622,20 +747,48 @@ def soccer_live():
                 ChampionshipsSoccer.country == country
             )
 
+        else:
+            # Ограничение при отсутствии фильтрации по стране
+            team1_entries = team1_entries.distinct()
+
         if league and league != 'null':
             team1_entries = team1_entries.filter(
                 SoccerMain.league_id == league
             )
 
-        if team1 and team1 != 'None':
+        if team1 and team1 != '':
             team1_entries = team1_entries.filter(
                 SoccerMain.team_home == team1
             )
 
-        if team2 and team2 != 'None':
+        if team2 and team2 != '':
             team1_entries = team1_entries.filter(
                 SoccerMain.team_away == team2
             )
+
+        if xg_t1 is not None and xg_t1_minus is not None and xg_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_xg.between(xg_t1 - xg_t1_minus, xg_t1 + xg_t1_plus)
+            )
+
+        if xg_t2 is not None and xg_t2_minus is not None and xg_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_xg.between(xg_t2 - xg_t2_minus, xg_t2 + xg_t2_plus)
+            )
+
+
+        if shots_t1 is not None and shots_t1_minus is not None and shots_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_attempts.between(shots_t1 - shots_t1_minus, shots_t1 + shots_t1_plus)
+            )
+
+        # Фильтрация по xG для команды 2
+        if shots_t2 is not None and shots_t2_minus is not None and shots_t2_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.away_attempts.between(shots_t2 - shots_t2_minus, shots_t2 + shots_t2_plus)
+            )
+
+
 
         # Фильтрация по коэффициентам закрытия для команды 1
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
@@ -689,6 +842,13 @@ def soccer_live():
                                                      total25_open + total25_open_plus)
             )
 
+
+        # Фильтрация по значениям xG для команды 1
+        if xg_t1 is not None and xg_t1_minus is not None and xg_t1_plus is not None:
+            team1_entries = team1_entries.filter(
+                SoccerHalf1Stats.home_xg.between(xg_t1 - xg_t1_minus, xg_t1 + xg_t1_plus)
+            )
+
         team1_entries = team1_entries.group_by(
             'team1_score_h2'
         ).order_by(
@@ -707,6 +867,9 @@ def soccer_live():
             func.count().label('count')
         ).join(
             selected_model, SoccerTimeline.match_id == selected_model.match_id
+        ).join(
+            SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+            # Добавьте соединение с SoccerHalf1Stats
         ).filter(
             SoccerTimeline.score_t1_h1 == score_t1_form,
             SoccerTimeline.score_t2_h1 == score_t2_form
@@ -721,6 +884,10 @@ def soccer_live():
                 ChampionshipsSoccer.country == country
             )
 
+        else:
+            # Ограничение при отсутствии фильтрации по стране
+            team2_entries = team2_entries.distinct()
+
         if league and league != 'null':
             team2_entries = team2_entries.filter(
                 SoccerMain.league_id == league
@@ -734,6 +901,31 @@ def soccer_live():
         if team2 and team2 != '':
             team2_entries = team2_entries.filter(
                 SoccerMain.team_away == team2
+            )
+
+
+        '''stats section'''
+
+        if xg_t1 is not None and xg_t1_minus is not None and xg_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_xg.between(xg_t1 - xg_t1_minus, xg_t1 + xg_t1_plus)
+            )
+
+        if xg_t2 is not None and xg_t2_minus is not None and xg_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_xg.between(xg_t2 - xg_t2_minus, xg_t2 + xg_t2_plus)
+            )
+
+
+        if shots_t1 is not None and shots_t1_minus is not None and shots_t1_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.home_attempts.between(shots_t1 - shots_t1_minus, shots_t1 + shots_t1_plus)
+            )
+
+        # Фильтрация по attempts для команды 2
+        if shots_t2 is not None and shots_t2_minus is not None and shots_t2_plus is not None:
+            team2_entries = team2_entries.filter(
+                SoccerHalf1Stats.away_attempts.between(shots_t2 - shots_t2_minus, shots_t2 + shots_t2_plus)
             )
 
         # Фильтрация по коэффициентам закрытия для команды 2
@@ -787,6 +979,7 @@ def soccer_live():
                 selected_model.odds_2_5_open.between(total25_open - total25_open_minus,
                                                      total25_open + total25_open_plus)
             )
+
 
         team2_entries = team2_entries.group_by(
             'team2_score_h2'

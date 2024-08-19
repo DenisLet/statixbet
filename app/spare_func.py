@@ -12,4 +12,7 @@ def count_odds_diff(old: float, new: float) -> (float, float):
     return -diff_value, diff_percent
 
 
+def get_inputed_stats(form):
+    ...
+
 print(count_odds_diff(2.37, 2.572))
