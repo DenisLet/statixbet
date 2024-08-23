@@ -384,7 +384,17 @@
         <div>
             {{ form.submit(class_='button full-width-button') }}
         </div>
-
+        <p></p>
+        <hr>
+        <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px;">
+            <button type="submit" name="button" value="corners">Corners</button>
+            <button type="submit" name="button" value="yellow_cards">Yellow Cards</button>
+            <button type="submit" name="button" value="shots_on_goal">Shots on Goal</button>
+            <button type="submit" name="button" value="fouls">Fouls</button>
+            <button type="submit" name="button" value="offsides">Offsides</button>
+            <button type="submit" name="button" value="throw_ins">Throw-ins</button>
+        </div>
+        <hr>
     </form>
 {% if percentages %}
     <h3>
@@ -443,6 +453,32 @@
                     <td>{{ team2_percentages[i][0] if i < team2_max else '' }}</td>
                     <td>{{ team2_percentages[i][1] if i < team2_max else '' }}</td>
                     <td>{{ team2_percentages[i][2]|round(2) if i < team2_max else '' }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% if corners_percentages %}
+    <h3>
+    Cases: <span style="color: red;">{{ total_corners_entries }}</span>
+
+</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Corners 2 half</th>
+                <th>Cases</th>
+                <th>%</th>
+                <th>Moer Then %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for corners, count, percentage, more in corners_percentages %}
+                <tr>
+                    <td>{{ corners }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ percentage|round(2) }}%</td>
+                    <td>{{ 'None' if more is none else more|round(2) }}%</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -612,6 +648,9 @@ document.addEventListener('DOMContentLoaded', function() {
     teamAwaySelect.addEventListener('change', saveSelectedValues);
     sportsbookSelect.addEventListener('change', saveSelectedValues);
 });
+
+
+
 </script>
 </html>
 {% endblock %}

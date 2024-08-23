@@ -7,12 +7,13 @@ from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.forms import SoccerLiveInput, SoccerLiveAdditionalInput, SoccerMainOddsInput, CountryLeageTeamBook
 from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds, UnibetOdds, SoccerTimeline
-from app.models import SoccerHalf1Stats
+from app.models import SoccerHalf1Stats, SoccerHalf2Stats
 from app.email import send_email, send_password_reset_email
 from app.spare_func import safe_float, count_odds_diff, get_inputed_stats
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
+from app.for_corners_temp import process_corners
 
 @app.route('/')
 @app.route('/index')
@@ -316,6 +317,7 @@ def process_form():
 
     print(opponent ,date_from, date_to, position, over_1_5_open - over_1_5_open_minus,
           over_1_5_open + over_1_5_open_plus ,over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus)
+    print(league)
 
     # Convert date strings to datetime.date objects if provided
     if date_from:
@@ -363,6 +365,17 @@ def process_form():
         query = query.filter(SoccerMain.team_away == team)
         if opponent:
             query = query.filter(SoccerMain.team_home == opponent)
+
+    if opponent and position == "HOME":
+        query = query.filter(SoccerMain.team_away == opponent)
+        if team:
+            query = query.filter(SoccerMain.team_home == team)
+    if opponent and position == "AWAY":
+        query = query.filter(SoccerMain.team_home == opponent)
+        if team:
+            query = query.filter(SoccerMain.team_away == team)
+
+
 
     if date_from:
         query = query.filter(SoccerMain.match_date >= date_from)
@@ -424,7 +437,10 @@ def process_form():
         response = {'error': 'No matching records found'}
     else:
         response = response_list
-    response_list.reverse()
+    print(response_list)
+
+    response_list = sorted(response_list, key=lambda x: x['date'], reverse=True)
+
     return jsonify(response_list)
 
 
@@ -434,7 +450,8 @@ def soccer_live():
     additional_form = SoccerLiveAdditionalInput()
     odds_form = SoccerMainOddsInput()
     teams_form = CountryLeageTeamBook()
-
+    button = request.form.get('button')
+    print(button)
     # Запрос уникальных стран, связанных с матчами
     countries = db.session.query(ChampionshipsSoccer.country).join(
         SoccerMain, ChampionshipsSoccer.id == SoccerMain.league_id
@@ -534,6 +551,40 @@ def soccer_live():
         yellows_t2_plus = additional_form.yellows_t2_plus.data
         yellows_t2_minus = additional_form.yellows_t2_minus.data
 
+        # Фильтрация по коэффициентам закрытия для победы и ничьи и тоталов
+        win_close = odds_form.win_t1.data
+        win_close_plus = odds_form.win_t1_plus.data
+        win_close_minus = odds_form.win_t1_minus.data
+        draw_close = odds_form.draw.data
+        draw_close_plus = odds_form.draw_plus.data
+        draw_close_minus = odds_form.draw_minus.data
+        lose_close = odds_form.win_t2.data
+        lose_close_plus = odds_form.win_t2_plus.data
+        lose_close_minus = odds_form.win_t2_minus.data
+        total15_close = odds_form.total_15.data
+        total15_close_plus = odds_form.total_15_plus.data
+        total15_close_minus = odds_form.total_15_minus.data
+        total25_close = odds_form.total_25.data
+        total25_close_plus = odds_form.total_25_plus.data
+        total25_close_minus = odds_form.total_25_minus.data
+
+        # Фильтрация по коэффициентам открытия для победы и ничьи и тоталов
+        win_open = odds_form.win_t1_open.data
+        win_open_minus = odds_form.win_t1_open_minus.data
+        win_open_plus = odds_form.win_t1_open_plus.data
+        draw_open = odds_form.draw_open.data
+        draw_open_plus = odds_form.draw_open_plus.data
+        draw_open_minus = odds_form.draw_open_minus.data
+        lose_open = odds_form.win_t2_open.data
+        lose_open_plus = odds_form.win_t2_open_plus.data
+        lose_open_minus = odds_form.win_t2_open_minus.data
+        total15_open = odds_form.total_15_open.data
+        total15_open_plus = odds_form.total_15_open_plus.data
+        total15_open_minus = odds_form.total_15_open_minus.data
+        total25_open = odds_form.total_25_open.data
+        total25_open_plus = odds_form.total_25_open_plus.data
+        total25_open_minus = odds_form.total_25_open_minus.data
+        print(draw_open, draw_open_plus, draw_open_minus)
 
         print(country, type(country))
         if country == 'None':
@@ -547,6 +598,40 @@ def soccer_live():
         }
         selected_model = sportbook_models.get(sportbook.lower())
         print(sportbook)
+
+        if request.method == 'POST':
+            button = request.form.get('button')
+            if button == 'corners':
+                total_corners_entries, corners_percentages = process_corners(
+                    score_t1_form, score_t2_form, country, league, team1, team2,
+                    xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
+                    shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus, shots_t2_minus,
+                    ongoal_t1, ongoal_t1_plus, ongoal_t1_minus, ongoal_t2, ongoal_t2_plus, ongoal_t2_minus,
+                    poss_t1, poss_t1_plus, poss_t1_minus, poss_t2, poss_t2_plus, poss_t2_minus,
+                    corners_t1, corners_t1_plus, corners_t1_minus, corners_t2, corners_t2_plus, corners_t2_minus,
+                    attacks_t1, attacks_t1_plus, attacks_t1_minus, attacks_t2, attacks_t2_plus, attacks_t2_minus,
+                    fkicks_t1, fkicks_t1_plus, fkicks_t1_minus, fkicks_t2, fkicks_t2_plus, fkicks_t2_minus,
+                    throwins_t1, throwins_t1_plus, throwins_t1_minus, throwins_t2, throwins_t2_plus, throwins_t2_minus,
+                    offsides_t1, offsides_t1_plus, offsides_t1_minus, offsides_t2, offsides_t2_plus, offsides_t2_minus,
+                    fouls_t1, fouls_t1_plus, fouls_t1_minus, fouls_t2, fouls_t2_plus, fouls_t2_minus,
+                    yellows_t1, yellows_t1_plus, yellows_t1_minus, yellows_t2, yellows_t2_plus, yellows_t2_minus,
+                    win_close, win_close_plus, win_close_minus, draw_close, draw_close_plus, draw_close_minus,
+                    lose_close, lose_close_plus, lose_close_minus, total15_close, total15_close_plus, total15_close_minus,
+                    total25_close, total25_close_plus, total25_close_minus,
+                    win_open, win_open_minus, win_open_plus, draw_open, draw_open_plus, draw_open_minus,
+                    lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
+                    total25_open, total25_open_plus, total25_open_minus, selected_model
+                )
+
+                return render_template(
+                    'soccer/soccer_live.html',
+                    form=form,
+                    additional_form=additional_form,
+                    odds_form=odds_form,
+                    teams_form=teams_form,
+                    total_corners_entries = total_corners_entries,
+                    corners_percentages =corners_percentages
+                )
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
@@ -708,21 +793,7 @@ def soccer_live():
                 SoccerHalf1Stats.away_yellow.between(yellows_t2 - yellows_t2_minus, yellows_t2 + yellows_t2_plus)
             )
 
-        win_close = odds_form.win_t1.data
-        win_close_plus = odds_form.win_t1_plus.data
-        win_close_minus = odds_form.win_t1_minus.data
-        draw_close = odds_form.draw.data
-        draw_close_plus = odds_form.draw_plus.data
-        draw_close_minus = odds_form.draw_minus.data
-        lose_close = odds_form.win_t2.data
-        lose_close_plus = odds_form.win_t2_plus.data
-        lose_close_minus = odds_form.win_t2_minus.data
-        total15_close = odds_form.total_15.data
-        total15_close_plus = odds_form.total_15_plus.data
-        total15_close_minus = odds_form.total_15_minus.data
-        total25_close = odds_form.total_25.data
-        total25_close_plus = odds_form.total_25_plus.data
-        total25_close_minus = odds_form.total_25_minus.data
+
 
 
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
@@ -750,23 +821,7 @@ def soccer_live():
                                                       total25_close + total25_close_plus)
             )
 
-        # Фильтрация по коэффициентам открытия для победы и ничьи
-        win_open = odds_form.win_t1_open.data
-        win_open_minus = odds_form.win_t1_open_minus.data
-        win_open_plus = odds_form.win_t1_open_plus.data
-        draw_open = odds_form.draw_open.data
-        draw_open_plus = odds_form.draw_open_plus.data
-        draw_open_minus = odds_form.draw_open_minus.data
-        lose_open = odds_form.win_t2_open.data
-        lose_open_plus = odds_form.win_t2_open_plus.data
-        lose_open_minus = odds_form.win_t2_open_minus.data
-        total15_open = odds_form.total_15_open.data
-        total15_open_plus = odds_form.total_15_open_plus.data
-        total15_open_minus = odds_form.total_15_open_minus.data
-        total25_open = odds_form.total_25_open.data
-        total25_open_plus = odds_form.total_25_open_plus.data
-        total25_open_minus = odds_form.total_25_open_minus.data
-        print(draw_open, draw_open_plus, draw_open_minus)
+
 
         # Фильтрация по коэффициентам открытия для победы, ничьи и поражения
         if win_open is not None and win_open_minus is not None and win_open_plus is not None:
@@ -801,7 +856,7 @@ def soccer_live():
             'total_score_h2'
         ).all()
 
-        total_entries = sum(entry.count for entry in soccer_timeline_entries)  # Подсчет всех матчей
+        total_entries = sum(entry.count for entry in soccer_timeline_entries)  # Подсчет всех матчей(угорвых и тд)
 
         if soccer_timeline_entries:
             percentages = [
@@ -1273,6 +1328,8 @@ def soccer_live():
         else:
             overall_probability_over0 = 0.00001
 
+
+
     return render_template(
         'soccer/soccer_live.html',
         form=form,
@@ -1323,6 +1380,7 @@ def get_teams_live():
 
     team_choices = [(team.team_home,) for team in teams]
     return jsonify(team_choices)
+
 
 @app.route('/success')
 def success():

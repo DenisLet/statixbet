@@ -77,7 +77,14 @@ class SoccerMain(db.Model):
     final: so.Mapped[str] = so.mapped_column(sa.String(64))
 
     def __repr__(self):
-        return f'<SoccerMain Match {self.match_id} - {self.team_home} vs {self.team_away}>'
+        return (
+            f'<SoccerMain(match_id={self.match_id}, league_id={self.league_id}, '
+            f'match_date={self.match_date}, start_time={self.start_time}, '
+            f'team_home="{self.team_home}", team_away="{self.team_away}", '
+            f'league_name="{self.league_name}", stage="{self.stage}", '
+            f'home_score_ft={self.home_score_ft}, away_score_ft={self.away_score_ft}, '
+            f'total_ft={self.total_ft}, final="{self.final}")>'
+        )
 
 
 class XbetOdds(db.Model):
