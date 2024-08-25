@@ -113,10 +113,10 @@
             <tbody>
                 <tr>
                     <td>Score</td>
-                    <td><input type="text" name="score_t1" value="{{ form.score_t1.data or 0 }}"></td>
+                    <td><input type="text" name="score_t1" value="{{ form.score_t1.data or ''}}"></td>
                     <td></td>
                     <td></td>
-                    <td><input type="text" name="score_t2" value="{{ form.score_t2.data or 0 }}"></td>
+                    <td><input type="text" name="score_t2" value="{{ form.score_t2.data or ''}}"></td>
                     <td></td>
                     <td></td>
                 </tr>
@@ -484,6 +484,39 @@
         </tbody>
     </table>
 {% endif %}
+{% if team1_corners_percentages or team2_corners_percentages %}
+    <h3>Teams Results</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Team1</th>
+                <th>Cases</th>
+                <th>Team1 %</th>
+                <th>Team2</th>
+                <th>Cases)</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set team1_max = team1_corners_percentages|length %}
+            {% set team2_max = team2_corners_percentages|length %}
+            {% set max_length = team1_max if team1_max > team2_max else team2_max %}
+
+            {% for i in range(max_length) %}
+                <tr>
+                    <td>{{ team1_corners_percentages[i][0] if i < team1_max else '' }}</td>
+                    <td>{{ team1_corners_percentages[i][1] if i < team1_max else '' }}</td>
+                    <td>{{ team1_corners_percentages[i][2]|round(2) if i < team1_max else '' }}%</td>
+
+                    <td>{{ team2_corners_percentages[i][0] if i < team2_max else '' }}</td>
+                    <td>{{ team2_corners_percentages[i][1] if i < team2_max else '' }}</td>
+                    <td>{{ team2_corners_percentages[i][2]|round(2) if i < team2_max else '' }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 
 </body>
 <script>

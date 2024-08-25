@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory
+from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory, session
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
 from sqlalchemy import text, func
@@ -451,7 +451,6 @@ def soccer_live():
     odds_form = SoccerMainOddsInput()
     teams_form = CountryLeageTeamBook()
     button = request.form.get('button')
-    print(button)
     # Запрос уникальных стран, связанных с матчами
     countries = db.session.query(ChampionshipsSoccer.country).join(
         SoccerMain, ChampionshipsSoccer.id == SoccerMain.league_id
@@ -469,6 +468,7 @@ def soccer_live():
     if form.validate_on_submit():
         score_t1_form = form.score_t1.data
         score_t2_form = form.score_t2.data
+
         country = teams_form.country.data
         league = teams_form.league.data
         team1 = teams_form.team_home.data
@@ -584,9 +584,7 @@ def soccer_live():
         total25_open = odds_form.total_25_open.data
         total25_open_plus = odds_form.total_25_open_plus.data
         total25_open_minus = odds_form.total_25_open_minus.data
-        print(draw_open, draw_open_plus, draw_open_minus)
 
-        print(country, type(country))
         if country == 'None':
             country = team1 = team2 = ''
 
@@ -597,12 +595,14 @@ def soccer_live():
             'unibet': UnibetOdds
         }
         selected_model = sportbook_models.get(sportbook.lower())
-        print(sportbook)
+
 
         if request.method == 'POST':
             button = request.form.get('button')
             if button == 'corners':
-                total_corners_entries, corners_percentages = process_corners(
+
+
+                total_corners_entries,corners_percentages,team1_corners_percentage,team2_corners_percentage  = process_corners(
                     score_t1_form, score_t2_form, country, league, team1, team2,
                     xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
                     shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus, shots_t2_minus,
@@ -622,23 +622,24 @@ def soccer_live():
                     lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
                     total25_open, total25_open_plus, total25_open_minus, selected_model
                 )
-
-                return render_template(
-                    'soccer/soccer_live.html',
-                    form=form,
-                    additional_form=additional_form,
-                    odds_form=odds_form,
-                    teams_form=teams_form,
-                    total_corners_entries = total_corners_entries,
-                    corners_percentages =corners_percentages
-                )
+                return render_template('soccer/soccer_live.html',
+                                       form=form,
+                                       additional_form=additional_form,
+                                       odds_form=odds_form,
+                                       teams_form=teams_form,
+                                       country_choices=country_choices,
+                                       total_corners_entries=total_corners_entries,
+                                       corners_percentages=corners_percentages,
+                                       team1_corners_percentages = team1_corners_percentage,
+                                       team2_corners_percentages = team2_corners_percentage,
+                                       button=button)
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
             func.count().label('count')
         ).filter(
-            SoccerTimeline.score_t1_h1 == score_t1_form,
-            SoccerTimeline.score_t2_h1 == score_t2_form
+            (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
+            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
         ).join(
             selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).join(
@@ -873,9 +874,11 @@ def soccer_live():
         ).join(
             SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
         ).filter(
-            SoccerTimeline.score_t1_h1 == score_t1_form,
-            SoccerTimeline.score_t2_h1 == score_t2_form
+            (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
+            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
         )
+
+
 
         if country and country != 'None':
             team1_entries = team1_entries.join(
@@ -1094,8 +1097,8 @@ def soccer_live():
             SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
             # Добавьте соединение с SoccerHalf1Stats
         ).filter(
-            SoccerTimeline.score_t1_h1 == score_t1_form,
-            SoccerTimeline.score_t2_h1 == score_t2_form
+            (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
+            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
         )
 
         if country and country != 'None':
@@ -1382,6 +1385,12 @@ def get_teams_live():
     return jsonify(team_choices)
 
 
-@app.route('/success')
-def success():
-    return "Form submitted successfully!"
+@app.route('/soccer_live_form')
+def soccer_live_form():
+    return render_template('soccer/soccer_live_form.html')
+
+@app.route('/perform_query/<int:query_number>', methods=['POST'])
+def perform_query(query_number):
+    # Обработка запроса и возврат JSON-ответа
+    result = your_query_function(query_number)
+    return jsonify(result)
