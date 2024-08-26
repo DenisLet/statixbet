@@ -248,3 +248,8 @@ class SoccerTimeline(db.Model):
     score_t2_h1: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
     score_t1_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
     score_t2_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+
+    yellow_t1_h1: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    yellow_t2_h1: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    yellow_t1_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    yellow_t2_h2: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)

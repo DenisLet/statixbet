@@ -517,6 +517,65 @@
     </table>
 {% endif %}
 
+{% if yellow_percentages %}
+    <h3>
+    Cases: <span style="color: red;">{{ total_yellow_entries }}</span>
+
+</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Yellow cards 2 half</th>
+                <th>Cases</th>
+                <th>%</th>
+                <th>Moer Then %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for yellow, count, percentage, more in yellow_percentages %}
+                <tr>
+                    <td>{{ yellow }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ percentage|round(2) }}%</td>
+                    <td>{{ 'None' if more is none else more|round(2) }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% if team1_yellow_percentages or team2_yellow_percentages %}
+    <h3>Teams Results</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Team1</th>
+                <th>Cases</th>
+                <th>Team1 %</th>
+                <th>Team2</th>
+                <th>Cases)</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set team1_max = team1_yellow_percentages|length %}
+            {% set team2_max = team2_yellow_percentages|length %}
+            {% set max_length = team1_max if team1_max > team2_max else team2_max %}
+
+            {% for i in range(max_length) %}
+                <tr>
+                    <td>{{ team1_yellow_percentages[i][0] if i < team1_max else '' }}</td>
+                    <td>{{ team1_yellow_percentages[i][1] if i < team1_max else '' }}</td>
+                    <td>{{ team1_yellow_percentages[i][2]|round(2) if i < team1_max else '' }}%</td>
+
+                    <td>{{ team2_yellow_percentages[i][0] if i < team2_max else '' }}</td>
+                    <td>{{ team2_yellow_percentages[i][1] if i < team2_max else '' }}</td>
+                    <td>{{ team2_yellow_percentages[i][2]|round(2) if i < team2_max else '' }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 
 </body>
 <script>
