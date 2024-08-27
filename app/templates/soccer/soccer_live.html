@@ -757,6 +757,33 @@
 {% endif %}
 
 
+{% if throws_percentages %}
+    <h3>
+    Cases: <span style="color: red;">{{ total_throws_entries }}</span>
+
+</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Throws 2 half</th>
+                <th>Cases</th>
+                <th>%</th>
+                <th>Greater Then %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for throws, count, percentage, more in throws_percentages %}
+                <tr>
+                    <td>{{ throws }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ percentage|round(2) }}%</td>
+                    <td>{{ 'None' if more is none else more|round(2) }}%</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
 </body>
 <script>
 function resetTable(tableId) {

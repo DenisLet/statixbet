@@ -18,6 +18,7 @@ from app.for_yellows_cards import process_yellow_cards
 from app.for_shots_ongoal import process_shots_ongoal
 from app.for_fouls import process_fouls
 from app.for_offsides import process_offsides
+from app.for_throws_ins import process_throws_ins
 
 @app.route('/')
 @app.route('/index')
@@ -803,6 +804,48 @@ def soccer_live():
                                                team1_offsides_percentages=team1_offsides_percentage,
                                                team2_offsides_percentages=team2_offsides_percentage,
                                                button=button)
+
+                    if request.method == 'POST':
+                        button = request.form.get('button')
+                        print(button)
+                        if button == 'throw_ins':
+                            total_throws_entries, throws_percentages = process_throws_ins(
+                                score_t1_form, score_t2_form, country, league, team1, team2,
+                                xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
+                                shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus, shots_t2_minus,
+                                ongoal_t1, ongoal_t1_plus, ongoal_t1_minus, ongoal_t2, ongoal_t2_plus, ongoal_t2_minus,
+                                poss_t1, poss_t1_plus, poss_t1_minus, poss_t2, poss_t2_plus, poss_t2_minus,
+                                corners_t1, corners_t1_plus, corners_t1_minus, corners_t2, corners_t2_plus,
+                                corners_t2_minus,
+                                attacks_t1, attacks_t1_plus, attacks_t1_minus, attacks_t2, attacks_t2_plus,
+                                attacks_t2_minus,
+                                fkicks_t1, fkicks_t1_plus, fkicks_t1_minus, fkicks_t2, fkicks_t2_plus, fkicks_t2_minus,
+                                throwins_t1, throwins_t1_plus, throwins_t1_minus, throwins_t2, throwins_t2_plus,
+                                throwins_t2_minus,
+                                offsides_t1, offsides_t1_plus, offsides_t1_minus, offsides_t2, offsides_t2_plus,
+                                offsides_t2_minus,
+                                fouls_t1, fouls_t1_plus, fouls_t1_minus, fouls_t2, fouls_t2_plus, fouls_t2_minus,
+                                yellows_t1, yellows_t1_plus, yellows_t1_minus, yellows_t2, yellows_t2_plus,
+                                yellows_t2_minus,
+                                win_close, win_close_plus, win_close_minus, draw_close, draw_close_plus,
+                                draw_close_minus,
+                                lose_close, lose_close_plus, lose_close_minus, total15_close, total15_close_plus,
+                                total15_close_minus,
+                                total25_close, total25_close_plus, total25_close_minus,
+                                win_open, win_open_minus, win_open_plus, draw_open, draw_open_plus, draw_open_minus,
+                                lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus,
+                                total15_open_minus,
+                                total25_open, total25_open_plus, total25_open_minus, selected_model
+                            )
+                            return render_template('soccer/soccer_live.html',
+                                                   form=form,
+                                                   additional_form=additional_form,
+                                                   odds_form=odds_form,
+                                                   teams_form=teams_form,
+                                                   country_choices=country_choices,
+                                                   total_throws_entries=total_throws_entries,
+                                                   throws_percentages=throws_percentages,
+                                                   button=button)
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
