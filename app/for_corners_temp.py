@@ -463,7 +463,7 @@ def process_corners(
 
 
     total_team1_corners_entries = sum(entry.count for entry in team1_corners_entries)
-    print('total_team1_corners_entries:', total_team1_corners_entries)
+
 
 
     team1_corners_percentages = [
@@ -472,7 +472,7 @@ def process_corners(
     ]
 
 
-    print('team1_corners_percentages:',team1_corners_percentages)
+
 
 
     corners_query_team2 = db.session.query(
@@ -691,15 +691,13 @@ def process_corners(
 
 
     total_team2_corners_entries = sum(entry.count for entry in team2_corners_entries)
-    print('total_team2_corners_entries:', total_team2_corners_entries)
+
 
 
     team2_corners_percentages = [
         (entry.team2_corners_h2, entry.count, (entry.count / total_team2_corners_entries) * 100)
         for entry in team2_corners_entries
     ]
-
-    print('team2_corners_percentages:',team2_corners_percentages)
 
 
     # Подсчет процентов, которые больше текущего количества угловых

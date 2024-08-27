@@ -15,6 +15,7 @@ import os
 from datetime import datetime
 from app.for_corners_temp import process_corners
 from app.for_yellows_cards import process_yellow_cards
+from app.for_shots_ongoal import process_shots_ongoal
 
 @app.route('/')
 @app.route('/index')
@@ -285,7 +286,6 @@ def get_teams():
 @app.route('/process-form', methods=['POST'])
 def process_form():
     data = request.get_json()
-    print(data)
 
     country = data.get('country')
     league = data.get('league')
@@ -316,9 +316,9 @@ def process_form():
     over_2_5_open_minus = safe_float(data.get('team1_over_25_minus', 0))
     over_2_5_open_plus = safe_float(data.get('team1_over_25_plus', 0))
 
-    print(opponent ,date_from, date_to, position, over_1_5_open - over_1_5_open_minus,
-          over_1_5_open + over_1_5_open_plus ,over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus)
-    print(league)
+    # print(opponent ,date_from, date_to, position, over_1_5_open - over_1_5_open_minus,
+    #       over_1_5_open + over_1_5_open_plus ,over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus)
+    # print(league)
 
     # Convert date strings to datetime.date objects if provided
     if date_from:
@@ -401,12 +401,12 @@ def process_form():
 
     results = query.all()
     response_list = []
-    print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus,
-          draw_open - draw_open_minus, draw_open + draw_open_plus, loss_open - loss_open_minus, loss_open + loss_open_plus)
+    # print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus,
+    #       draw_open - draw_open_minus, draw_open + draw_open_plus, loss_open - loss_open_minus, loss_open + loss_open_plus)
 
     for result in results:
         if result:
-            print(result)
+            # print(result)
             win_home_diff = f"{count_odds_diff(result[0].win_home_open, result[0].win_home_close)[0]}<br><br>{count_odds_diff(result[0].win_home_open, result[0].win_home_close)[1]}"
             win_away_diff = f"{count_odds_diff(result[0].win_away_open, result[0].win_away_close)[0]}<br><br>{count_odds_diff(result[0].win_away_open, result[0].win_away_close)[1]}"
             total25_diff = f"{count_odds_diff(result[0].odds_2_5_open, result[0].odds_2_5_close)[0]}<br><br>{count_odds_diff(result[0].odds_2_5_open, result[0].odds_2_5_close)[1]}"
@@ -431,7 +431,7 @@ def process_form():
             # print(f"{match['date']}. {match['team_home']} vs {match['team_away']}, "
             #       f"Score: {match['home_score_ft']}-{match['away_score_ft']}, WinOpen:"
             #       f" {match['win_home_open']}, WinClose: {match['win_home_close']} LoseOpen:{match['win_away_open']} Loselose:{match['win_away_close']}")
-            print(match['total25_diff'])
+            # print(match['total25_diff'])
 
     print(len(response_list))
     if not response_list:
@@ -674,6 +674,49 @@ def soccer_live():
                                            team1_yellow_percentages=team1_yellow_percentage,
                                            team2_yellow_percentages=team2_yellow_percentage,
                                            button=button)
+
+                if request.method == 'POST':
+                    button = request.form.get('button')
+                    print(button)
+                    if button == 'shots_on_goal':
+                        total_ongoal_entries, ongoal_percentages, team1_ongoal_percentage, team2_ongoal_percentage = process_shots_ongoal(
+                            score_t1_form, score_t2_form, country, league, team1, team2,
+                            xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
+                            shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus, shots_t2_minus,
+                            ongoal_t1, ongoal_t1_plus, ongoal_t1_minus, ongoal_t2, ongoal_t2_plus, ongoal_t2_minus,
+                            poss_t1, poss_t1_plus, poss_t1_minus, poss_t2, poss_t2_plus, poss_t2_minus,
+                            corners_t1, corners_t1_plus, corners_t1_minus, corners_t2, corners_t2_plus,
+                            corners_t2_minus,
+                            attacks_t1, attacks_t1_plus, attacks_t1_minus, attacks_t2, attacks_t2_plus,
+                            attacks_t2_minus,
+                            fkicks_t1, fkicks_t1_plus, fkicks_t1_minus, fkicks_t2, fkicks_t2_plus, fkicks_t2_minus,
+                            throwins_t1, throwins_t1_plus, throwins_t1_minus, throwins_t2, throwins_t2_plus,
+                            throwins_t2_minus,
+                            offsides_t1, offsides_t1_plus, offsides_t1_minus, offsides_t2, offsides_t2_plus,
+                            offsides_t2_minus,
+                            fouls_t1, fouls_t1_plus, fouls_t1_minus, fouls_t2, fouls_t2_plus, fouls_t2_minus,
+                            yellows_t1, yellows_t1_plus, yellows_t1_minus, yellows_t2, yellows_t2_plus,
+                            yellows_t2_minus,
+                            win_close, win_close_plus, win_close_minus, draw_close, draw_close_plus, draw_close_minus,
+                            lose_close, lose_close_plus, lose_close_minus, total15_close, total15_close_plus,
+                            total15_close_minus,
+                            total25_close, total25_close_plus, total25_close_minus,
+                            win_open, win_open_minus, win_open_plus, draw_open, draw_open_plus, draw_open_minus,
+                            lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus,
+                            total15_open_minus,
+                            total25_open, total25_open_plus, total25_open_minus, selected_model
+                        )
+                        return render_template('soccer/soccer_live.html',
+                                               form=form,
+                                               additional_form=additional_form,
+                                               odds_form=odds_form,
+                                               teams_form=teams_form,
+                                               country_choices=country_choices,
+                                               total_ongoal_entries=total_ongoal_entries,
+                                               ongoal_percentages=ongoal_percentages,
+                                               team1_ongoal_percentages=team1_ongoal_percentage,
+                                               team2_ongoal_percentages=team2_ongoal_percentage,
+                                               button=button)
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
@@ -1358,8 +1401,7 @@ def soccer_live():
             team1_goal_over0 = [entry[2] / 100 for entry in team1_percentages if entry[0] == 0]
             team2_goal_over0 = [entry[2] / 100 for entry in team2_percentages if entry[0] == 0]
 
-            print(f"Team 1 Goal Over 0: {team1_goal_over0}")
-            print(f"Team 2 Goal Over 0: {team2_goal_over0}")
+
 
             try:
                 if team1_goal_over0 and team2_goal_over0:
@@ -1393,7 +1435,7 @@ def soccer_live():
 @app.route('/get_leagues_live', methods=['GET'])
 def get_leagues_live():
     country_id = request.args.get('country_id')
-    print(f"Received country_id: {country_id}")
+
 
     if not country_id or country_id == 'None':
         return jsonify([])
@@ -1412,7 +1454,7 @@ def get_leagues_live():
 @app.route('/get_teams_live', methods=['GET'])
 def get_teams_live():
     league_id = request.args.get('league_id')
-    print(f"Received league_id: {league_id}")
+    (f"Received league_id: {league_id}")
 
     if not league_id or league_id == 'null':
         return jsonify([])  # Вернуть пустой список или другой ответ

@@ -98,7 +98,7 @@ class SoccerLiveInput(FlaskForm):
     attacks_t2_plus = IntegerField('Attacks Team 2 Plus', validators=[Optional()])
     attacks_t2_minus = IntegerField('Attacks Team 2 Minus', validators=[Optional()])
 
-    submit = SubmitField('Submit')
+    submit = SubmitField('Submit 2 half goals')
 
 class SoccerLiveAdditionalInput(FlaskForm):
 
