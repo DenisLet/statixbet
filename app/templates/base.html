@@ -17,6 +17,7 @@
             <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'basketball' else '' }}">Basketball</a>
             <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'ice_hockey' else '' }}">Ice Hockey</a>
             <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'handball' else '' }}">Handball</a>
+            <a href="{{ url_for('current_matches') }}" class="{{ 'active' if active_page == 'current_matches' else '' }}">Live Matches</a>
         </div>
         {% if not current_user.is_anonymous %}
         <div class="right">

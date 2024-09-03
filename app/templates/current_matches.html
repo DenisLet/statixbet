@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container" id="matches-container">
+    <h1>Live Football Matches</h1>
+    <div id="live-matches">
+        {% include 'soccer/live_matches_table.html' %}
+    </div>
+</div>
+
+<style>
+    .table-container {
+        width: calc(100% - 20px); /* Уменьшение ширины на 20px для отступов по краям */
+        margin: 10px; /* Отступы вокруг таблицы */
+        overflow-x: auto; /* Добавляет прокрутку по горизонтали при необходимости */
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8px; /* Уменьшение размера шрифта в два раза */
+    }
+
+    th, td {
+        padding: 5px; /* Уменьшение внутреннего отступа */
+        text-align: center;
+        border: 1px solid black;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .header-row th {
+        background-color: #dcdcdc;
+    }
+</style>
+
+<script>
+    function refreshMatches() {
+        fetch('/live_matches_table')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('live-matches').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching match data:', error));
+    }
+
+    // Обновление данных каждые 30 секунд
+    setInterval(refreshMatches, 30000);
+</script>
+
+{% endblock %}
