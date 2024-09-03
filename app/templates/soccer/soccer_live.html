@@ -931,7 +931,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработка изменения выбора страны
     countrySelect.addEventListener('change', function() {
         const countryId = this.value;
-        saveSelectedValues();
+
+        // Сброс значений для лиги и команд при изменении страны
+        leagueSelect.innerHTML = '<option value="">Select League</option>';
+        teamHomeSelect.innerHTML = '<option value="">Select Team</option>';
+        teamAwaySelect.innerHTML = '<option value="">Select Team</option>';
+
+        saveSelectedValues(); // Сохранение новых выбранных значений
         updateLeagues(countryId); // Обновляем лиги при изменении страны
     });
 

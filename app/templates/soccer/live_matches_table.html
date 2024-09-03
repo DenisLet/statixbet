@@ -40,52 +40,68 @@
 
                 {% set home_corners_2nd = match.stats['2ND'].Corners.home if '2ND' in match.stats and 'Corners' in match.stats['2ND'] else '-' %}
                 {% set away_corners_2nd = match.stats['2ND'].Corners.away if '2ND' in match.stats and 'Corners' in match.stats['2ND'] else '-' %}
-                {% set total_corners_2nd_half = home_corners_2nd if home_corners_2nd != '-' else 0 + away_corners_2nd if away_corners_2nd != '-' else 0 %}
+                {% set total_corners_2nd_half = (home_corners_2nd|int) + (away_corners_2nd|int) if home_corners_2nd != '-' and away_corners_2nd != '-' else '-' %}
 
                 {% set home_shots_on_goal_2nd = match.stats['2ND']['Shots on Goal'].home if '2ND' in match.stats and 'Shots on Goal' in match.stats['2ND'] else '-' %}
                 {% set away_shots_on_goal_2nd = match.stats['2ND']['Shots on Goal'].away if '2ND' in match.stats and 'Shots on Goal' in match.stats['2ND'] else '-' %}
-                {% set total_shots_on_goal_2nd_half = home_shots_on_goal_2nd if home_shots_on_goal_2nd != '-' else 0 + away_shots_on_goal_2nd if away_shots_on_goal_2nd != '-' else 0 %}
+                {% set total_shots_on_goal_2nd_half = (home_shots_on_goal_2nd|int) + (away_shots_on_goal_2nd|int) if home_shots_on_goal_2nd != '-' and away_shots_on_goal_2nd != '-' else '-' %}
 
                 {% set home_offsides_2nd = match.stats['2ND'].Offsides.home if '2ND' in match.stats and 'Offsides' in match.stats['2ND'] else '-' %}
                 {% set away_offsides_2nd = match.stats['2ND'].Offsides.away if '2ND' in match.stats and 'Offsides' in match.stats['2ND'] else '-' %}
-                {% set total_offsides_2nd_half = home_offsides_2nd if home_offsides_2nd != '-' else 0 + away_offsides_2nd if away_offsides_2nd != '-' else 0 %}
+                {% set total_offsides_2nd_half = (home_offsides_2nd|int) + (away_offsides_2nd|int) if home_offsides_2nd != '-' and away_offsides_2nd != '-' else '-' %}
 
                 {% set home_yellows_2nd = match.stats['2ND']['Yellow Cards'].home if '2ND' in match.stats and 'Yellow Cards' in match.stats['2ND'] else '-' %}
                 {% set away_yellows_2nd = match.stats['2ND']['Yellow Cards'].away if '2ND' in match.stats and 'Yellow Cards' in match.stats['2ND'] else '-' %}
-                {% set total_yellows_2nd_half = home_yellows_2nd if home_yellows_2nd != '-' else 0 + away_yellows_2nd if away_yellows_2nd != '-' else 0 %}
+                {% set total_yellows_2nd_half = (home_yellows_2nd|int) + (away_yellows_2nd|int) if home_yellows_2nd != '-' and away_yellows_2nd != '-' else '-' %}
 
                 {% set current_minute_int = match.current_minute|int %}
 
-                {% set is_highlighted_red_goals = total_goals_2nd_half >= 2 and current_minute_int <= 56 %}
-                {% set is_highlighted_green_goals = home_score_2nd == 0 and away_score_2nd == 0 and current_minute_int > 65 %}
+                {% set is_highlighted_red_goals = total_goals_2nd_half != '-' and total_goals_2nd_half|int >= 2 and current_minute_int <= 56 %}
+                {% set is_highlighted_green_goals = total_goals_2nd_half != '-' and home_score_2nd|int == 0 and away_score_2nd|int == 0 and current_minute_int > 65 %}
 
-                {% set is_highlighted_green_corners = (current_minute_int > 61 and total_corners_2nd_half == 0) or
-                                                      (current_minute_int > 71 and total_corners_2nd_half <= 1) or
-                                                      (current_minute_int > 81 and total_corners_2nd_half <= 2) %}
-                {% set is_highlighted_red_corners = (current_minute_int <= 50 and total_corners_2nd_half >= 2) or
-                                                    (current_minute_int <= 60 and total_corners_2nd_half >= 4) or
-                                                    (current_minute_int <= 70 and total_corners_2nd_half >= 6) %}
+                {% set is_highlighted_green_corners = total_corners_2nd_half != '-' and (
+                    (current_minute_int > 61 and total_corners_2nd_half|int == 0) or
+                    (current_minute_int > 71 and total_corners_2nd_half|int <= 1) or
+                    (current_minute_int > 81 and total_corners_2nd_half|int <= 2)
+                ) %}
+                {% set is_highlighted_red_corners = total_corners_2nd_half != '-' and (
+                    (current_minute_int <= 50 and total_corners_2nd_half|int >= 2) or
+                    (current_minute_int <= 60 and total_corners_2nd_half|int >= 4) or
+                    (current_minute_int <= 70 and total_corners_2nd_half|int >= 6)
+                ) %}
 
-                {% set is_highlighted_green_shots_on_goal = (current_minute_int > 61 and total_shots_on_goal_2nd_half == 0) or
-                                                             (current_minute_int > 71 and total_shots_on_goal_2nd_half <= 1) or
-                                                             (current_minute_int > 81 and total_shots_on_goal_2nd_half <= 2) %}
-                {% set is_highlighted_red_shots_on_goal = (current_minute_int <= 50 and total_shots_on_goal_2nd_half >= 2) or
-                                                           (current_minute_int <= 60 and total_shots_on_goal_2nd_half >= 4) or
-                                                           (current_minute_int <= 70 and total_shots_on_goal_2nd_half >= 6) %}
+                {% set is_highlighted_green_shots_on_goal = total_shots_on_goal_2nd_half != '-' and (
+                    (current_minute_int > 61 and total_shots_on_goal_2nd_half|int == 0) or
+                    (current_minute_int > 71 and total_shots_on_goal_2nd_half|int <= 1) or
+                    (current_minute_int > 81 and total_shots_on_goal_2nd_half|int <= 2)
+                ) %}
+                {% set is_highlighted_red_shots_on_goal = total_shots_on_goal_2nd_half != '-' and (
+                    (current_minute_int <= 50 and total_shots_on_goal_2nd_half|int >= 2) or
+                    (current_minute_int <= 60 and total_shots_on_goal_2nd_half|int >= 4) or
+                    (current_minute_int <= 70 and total_shots_on_goal_2nd_half|int >= 6)
+                ) %}
 
-                {% set is_highlighted_green_offsides = (current_minute_int > 65 and total_offsides_2nd_half == 0) or
-                                       (current_minute_int > 75 and total_offsides_2nd_half <= 1) %}
-                {% set is_highlighted_red_offsides = (current_minute_int <= 60 and total_offsides_2nd_half >= 2) or
-                                     (current_minute_int <= 70 and total_offsides_2nd_half >= 3) or
-                                     (current_minute_int <= 80 and total_offsides_2nd_half >= 4) %}
+                {% set is_highlighted_green_offsides = total_offsides_2nd_half != '-' and (
+                    (current_minute_int > 65 and total_offsides_2nd_half|int == 0) or
+                    (current_minute_int > 75 and total_offsides_2nd_half|int <= 1)
+                ) %}
+                {% set is_highlighted_red_offsides = total_offsides_2nd_half != '-' and (
+                    (current_minute_int <= 60 and total_offsides_2nd_half|int >= 2) or
+                    (current_minute_int <= 70 and total_offsides_2nd_half|int >= 3) or
+                    (current_minute_int <= 80 and total_offsides_2nd_half|int >= 4)
+                ) %}
 
-                {% set is_highlighted_green_yellows = (current_minute_int > 65 and total_yellows_2nd_half == 0) or
-                                      (current_minute_int > 70 and total_yellows_2nd_half <= 1) or
-                                      (current_minute_int > 80 and total_yellows_2nd_half <= 2) %}
-                {% set is_highlighted_red_yellows = (current_minute_int <= 50 and total_yellows_2nd_half >= 2) or
-                                                    (current_minute_int <= 60 and total_yellows_2nd_half >= 3) or
-                                                    (current_minute_int <= 70 and total_yellows_2nd_half >= 4) or
-                                                    (current_minute_int <= 80 and total_yellows_2nd_half >= 6) %}
+                {% set is_highlighted_green_yellows = total_yellows_2nd_half != '-' and (
+                    (current_minute_int > 65 and total_yellows_2nd_half|int == 0) or
+                    (current_minute_int > 70 and total_yellows_2nd_half|int <= 1) or
+                    (current_minute_int > 80 and total_yellows_2nd_half|int <= 2)
+                ) %}
+                {% set is_highlighted_red_yellows = total_yellows_2nd_half != '-' and (
+                    (current_minute_int <= 50 and total_yellows_2nd_half|int >= 2) or
+                    (current_minute_int <= 60 and total_yellows_2nd_half|int >= 3) or
+                    (current_minute_int <= 70 and total_yellows_2nd_half|int >= 4) or
+                    (current_minute_int <= 80 and total_yellows_2nd_half|int >= 6)
+                ) %}
 
                 <tr>
                     <td>{{ match.country }} - {{ match.league }}</td>
@@ -97,17 +113,57 @@
                     <td>{{ match.stats['1ST']['Shots on Goal'].home if '1ST' in match.stats and 'Shots on Goal' in match.stats['1ST'] else '-' }} - {{ match.stats['1ST']['Shots on Goal'].away if '1ST' in match.stats and 'Shots on Goal' in match.stats['1ST'] else '-' }}</td>
                     <td>{{ match.stats['1ST']['Yellow Cards'].home if '1ST' in match.stats and 'Yellow Cards' in match.stats['1ST'] else '-' }} - {{ match.stats['1ST']['Yellow Cards'].away if '1ST' in match.stats and 'Yellow Cards' in match.stats['1ST'] else '-' }}</td>
                     <td>{{ match.stats['1ST'].Offsides.home if '1ST' in match.stats and 'Offsides' in match.stats['1ST'] else '-' }} - {{ match.stats['1ST'].Offsides.away if '1ST' in match.stats and 'Offsides' in match.stats['1ST'] else '-' }}</td>
-                    <td><span class="{{ 'highlight-red-text' if is_highlighted_red_goals else 'highlight-green-text' if is_highlighted_green_goals else '' }}">{{ home_score_2nd }} - {{ away_score_2nd }}</span></td>
-                    <td><span class="{{ 'highlight-red-text' if is_highlighted_red_corners and home_corners_2nd != '-' and away_corners_2nd != '-' else 'highlight-green-text' if is_highlighted_green_corners and home_corners_2nd != '-' and away_corners_2nd != '-' else '' }}">{{ home_corners_2nd }} - {{ away_corners_2nd }}</span></td>
+                    <td>
+                        {% if is_highlighted_red_goals %}
+                            <span class="highlight-red-text">{{ match.home_score_second_half }} - {{ match.away_score_second_half }}</span>
+                        {% elif is_highlighted_green_goals %}
+                            <span class="highlight-green-text">{{ match.home_score_second_half }} - {{ match.away_score_second_half }}</span>
+                        {% else %}
+                            {{ match.home_score_second_half }} - {{ match.away_score_second_half }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if is_highlighted_red_corners %}
+                            <span class="highlight-red-text">{{ home_corners_2nd }} - {{ away_corners_2nd }}</span>
+                        {% elif is_highlighted_green_corners %}
+                            <span class="highlight-green-text">{{ home_corners_2nd }} - {{ away_corners_2nd }}</span>
+                        {% else %}
+                            {{ home_corners_2nd }} - {{ away_corners_2nd }}
+                        {% endif %}
+                    </td>
                     <td>{{ match.stats['2ND'].Shots.home if '2ND' in match.stats and 'Shots' in match.stats['2ND'] else '-' }} - {{ match.stats['2ND'].Shots.away if '2ND' in match.stats and 'Shots' in match.stats['2ND'] else '-' }}</td>
-                    <td><span class="{{ 'highlight-red-text' if is_highlighted_red_shots_on_goal and home_shots_on_goal_2nd != '-' and away_shots_on_goal_2nd != '-'  else 'highlight-green-text' if is_highlighted_green_shots_on_goal and home_shots_on_goal_2nd != '-' and away_shots_on_goal_2nd != '-' else '' }}">{{ home_shots_on_goal_2nd }} - {{ away_shots_on_goal_2nd }}</span></td>
-                    <td><span class="{{ 'highlight-red-text' if is_highlighted_red_yellows and home_yellows_2nd != '-' and away_yellows_2nd != '-' else 'highlight-green-text' if is_highlighted_green_yellows and home_yellows_2nd != '-' and away_yellows_2nd != '-' else '' }}">{{ home_yellows_2nd }} - {{ away_yellows_2nd }}</span></td>
-                    <td><span class="{{ 'highlight-red-text' if is_highlighted_red_offsides and home_offsides_2nd != '-' and away_offsides_2nd != '-' else 'highlight-green-text' if is_highlighted_green_offsides and home_offsides_2nd != '-' and away_offsides_2nd != '-' else '' }}">{{ home_offsides_2nd }} - {{ away_offsides_2nd }}</span></td>
-                    <td>{{ match.stats['ALL'].Fouls.home if 'ALL' in match.stats and 'Fouls' in match.stats['ALL'] else '-' }} - {{ match.stats['ALL'].Fouls.away if 'ALL' in match.stats and 'Fouls' in match.stats['ALL'] else '-' }}</td>
+                    <td>
+                        {% if is_highlighted_red_shots_on_goal %}
+                            <span class="highlight-red-text">{{ home_shots_on_goal_2nd }} - {{ away_shots_on_goal_2nd }}</span>
+                        {% elif is_highlighted_green_shots_on_goal %}
+                            <span class="highlight-green-text">{{ home_shots_on_goal_2nd }} - {{ away_shots_on_goal_2nd }}</span>
+                        {% else %}
+                            {{ home_shots_on_goal_2nd }} - {{ away_shots_on_goal_2nd }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if is_highlighted_red_yellows %}
+                            <span class="highlight-red-text">{{ home_yellows_2nd }} - {{ away_yellows_2nd }}</span>
+                        {% elif is_highlighted_green_yellows %}
+                            <span class="highlight-green-text">{{ home_yellows_2nd }} - {{ away_yellows_2nd }}</span>
+                        {% else %}
+                            {{ home_yellows_2nd }} - {{ away_yellows_2nd }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if is_highlighted_red_offsides %}
+                            <span class="highlight-red-text">{{ home_offsides_2nd }} - {{ away_offsides_2nd }}</span>
+                        {% elif is_highlighted_green_offsides %}
+                            <span class="highlight-green-text">{{ home_offsides_2nd }} - {{ away_offsides_2nd }}</span>
+                        {% else %}
+                            {{ home_offsides_2nd }} - {{ away_offsides_2nd }}
+                        {% endif %}
+                    </td>
+                    <td>{{ match.fouls_home }} - {{ match.fouls_away }}</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 {% else %}
-    <p>No live matches available at the moment.</p>
+    <p>No matches available.</p>
 {% endif %}
