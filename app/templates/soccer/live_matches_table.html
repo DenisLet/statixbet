@@ -10,6 +10,9 @@
         color: #721c24; /* Темно-красный текст */
         padding: 0.2em; /* Небольшие отступы для лучшего отображения */
     }
+    .nowrap {
+        white-space: nowrap; /* Не переносить текст на другую строку */
+    }
 </style>
     <table>
         <thead>
@@ -29,7 +32,6 @@
                 <th>2nd Half On Goal</th>
                 <th>2nd Half Yellows</th>
                 <th>2nd Half Offsides</th>
-                <th>Fouls</th>
             </tr>
         </thead>
         <tbody>
@@ -159,7 +161,6 @@
                             {{ home_offsides_2nd }} - {{ away_offsides_2nd }}
                         {% endif %}
                     </td>
-                    <td>{{ match.fouls_home }} - {{ match.fouls_away }}</td>
                 </tr>
             {% endfor %}
         </tbody>

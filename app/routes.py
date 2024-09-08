@@ -24,6 +24,7 @@ import time
 import requests
 from app.matches_ids import get_matches_ids
 from app.soccer_timeliner import make_timeline
+from functools import wraps
 
 @app.route('/')
 @app.route('/index')
@@ -170,6 +171,24 @@ def test_request():
         flash('No available requests left.')
     return redirect(url_for('index'))
 
+
+def decrement_requests(func):
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        # Если запрос не является POST, просто вызываем функцию без уменьшения числа запросов
+        if request.method == 'POST':
+            if current_user.available_requests > 0:
+                # Уменьшаем количество запросов только при POST-запросе
+                current_user.available_requests -= 1
+                db.session.commit()
+            else:
+                flash('No available requests left.')
+                return redirect(url_for('index'))  # Перенаправляем на главную страницу или любую другую
+        return func(*args, **kwargs)
+    return decorated_function
+
+
+
 @app.route('/admin')
 @login_required
 def admin_panel():
@@ -221,6 +240,7 @@ def under_construction():
     return render_template('under_construction.html')
 
 @app.route('/soccer')
+@login_required
 def soccer():
     return render_template('soccer.html', active_page='soccer')
 
@@ -229,7 +249,6 @@ def soccer():
 @app.route('/odds_scan_content')
 def odds_scan_content():
     return render_template('soccer/soccer_odds_scan.html')
-
 
 
 
@@ -248,9 +267,12 @@ def get_countries():
         return jsonify([]), 500
 
 
+
 @app.route('/api/leagues', methods=['GET'])
 def get_leagues():
     country = request.args.get('country')
+    session['country'] = country
+
     if not country:
         return jsonify({"error": "Country parameter is required"}), 400
 
@@ -267,19 +289,36 @@ def get_leagues():
         print('Error fetching leagues:', e)
         return jsonify([]), 500
 
+
 @app.route('/api/teams', methods=['GET'])
 def get_teams():
     league = request.args.get('league')
+    country = session.get('country')
+
     if not league:
         return jsonify({"error": "League parameter is required"}), 400
 
+    if not country:
+        return jsonify({"error": "Country parameter is required"}), 400
+
     try:
-        # Получаем список команд из модели SoccerMain для заданной лиги
+        # Получаем id лиги для заданной лиги и страны
+        league_info = db.session.query(ChampionshipsSoccer.id).filter(
+            ChampionshipsSoccer.league == league,
+            ChampionshipsSoccer.country == country
+        ).first()
+
+        if not league_info:
+            return jsonify({"error": "League not found for the specified country"}), 404
+
+        league_id = league_info[0]
+
+        # Получаем список команд из модели SoccerMain для найденного league_id
         teams = db.session.query(SoccerMain.team_home).filter(
-            SoccerMain.league_name == league
+            SoccerMain.league_id == league_id
         ).distinct().union(
             db.session.query(SoccerMain.team_away).filter(
-                SoccerMain.league_name == league
+                SoccerMain.league_id == league_id
             ).distinct()
         ).order_by(SoccerMain.team_home).all()
 
@@ -292,6 +331,8 @@ def get_teams():
 
 
 @app.route('/process-form', methods=['POST'])
+@login_required
+@decrement_requests
 def process_form():
     data = request.get_json()
 
@@ -323,10 +364,6 @@ def process_form():
     over_2_5_open = safe_float(data.get('team1_over_25', 0))
     over_2_5_open_minus = safe_float(data.get('team1_over_25_minus', 0))
     over_2_5_open_plus = safe_float(data.get('team1_over_25_plus', 0))
-
-    # print(opponent ,date_from, date_to, position, over_1_5_open - over_1_5_open_minus,
-    #       over_1_5_open + over_1_5_open_plus ,over_2_5_open - over_2_5_open_minus, over_2_5_open + over_2_5_open_plus)
-    # print(league)
 
     # Convert date strings to datetime.date objects if provided
     if date_from:
@@ -409,8 +446,6 @@ def process_form():
 
     results = query.all()
     response_list = []
-    # print(country, league, team, sportbook, win_open - win_open_minus, win_open + win_open_plus,
-    #       draw_open - draw_open_minus, draw_open + draw_open_plus, loss_open - loss_open_minus, loss_open + loss_open_plus)
 
     for result in results:
         if result:
@@ -436,24 +471,17 @@ def process_form():
             }
             response_list.append(match)
 
-            # print(f"{match['date']}. {match['team_home']} vs {match['team_away']}, "
-            #       f"Score: {match['home_score_ft']}-{match['away_score_ft']}, WinOpen:"
-            #       f" {match['win_home_open']}, WinClose: {match['win_home_close']} LoseOpen:{match['win_away_open']} Loselose:{match['win_away_close']}")
-            # print(match['total25_diff'])
-
-    print(len(response_list))
     if not response_list:
         response = {'error': 'No matching records found'}
     else:
         response = response_list
-    print(response_list)
-
     response_list = sorted(response_list, key=lambda x: x['date'], reverse=True)
-
     return jsonify(response_list)
 
 
 @app.route('/soccer_live', methods=['GET', 'POST'])
+@login_required
+@decrement_requests
 def soccer_live():
     form = SoccerLiveInput()
     additional_form = SoccerLiveAdditionalInput()
@@ -1647,268 +1675,64 @@ def perform_query(query_number):
     result = your_query_function(query_number)
     return jsonify(result)
 
-@app.route('/current_matches')
+
+PUBLIC_URL = 'https://232d51760f07ba15d32352ddeead4692.loophole.site'
+
+def fetch_matches_from_first_server():
+    try:
+        response = requests.get(PUBLIC_URL, verify=False)
+        response.raise_for_status()
+        data = response.json()
+
+
+
+        processed_data = []
+        for match in data:
+            processed_data.append({
+                'match_id': match.get('match_id'),
+                'home_team': match.get('home_team'),
+                'away_team': match.get('away_team'),
+                'league': match.get('league'),
+                'country': match.get('country'),
+                'half': match.get('half'),
+                'current_minute': match.get('current_minute', 'Halftime'),
+                'home_score': match.get('home_score', 0),
+                'away_score': match.get('away_score', 0),
+                'home_score_first_half': match.get('home_score_first_half', 0),
+                'away_score_first_half': match.get('away_score_first_half', 0),
+                'home_score_second_half': match.get('home_score_second_half', 0),
+                'away_score_second_half': match.get('away_score_second_half', 0),
+                'stats': match.get('stats', {})
+            })
+        return processed_data
+    except requests.RequestException as e:
+        print(f"Error fetching data from first server: {e}")
+        return []
+
+@app.route('/current_matches', methods=['GET', 'POST'])
 def current_matches():
-    ua = UserAgent()
-    headers = {'User-Agent': ua.random}
-    url = 'https://www.sofascore.com/api/v1/sport/football/events/live'
+    if request.method == 'POST':
 
-    def fetch_live_matches():
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            return response.json().get('events', [])
-        except requests.RequestException as e:
-            return []
+        return '', 200
 
-    def fetch_match_statistics(match_id):
-        stats_url = f'https://www.sofascore.com/api/v1/event/{match_id}/statistics'
-        try:
-            response = requests.get(stats_url, headers=headers)
-            response.raise_for_status()
-            return response.json().get('statistics', [])
-        except requests.RequestException as e:
-            return []
+    matches_data = fetch_matches_from_first_server()
 
-    def calculate_current_minute(time_data, match_status):
-        current_period_start = time_data.get('currentPeriodStartTimestamp')
-        initial = time_data.get('initial', 0)
-
-        if not current_period_start or match_status.lower() in ["halftime", "break", "finished", "postponed",
-                                                                "penalties", "awaiting extra time", "awaiting penalties", "1st extra","2nd extra", "awaiting"]:
-            return None
-
-        current_timestamp = time.time()
-        elapsed_time = current_timestamp - current_period_start + initial
-        current_minute = int(elapsed_time // 60)
-        return f"{current_minute}'"
-
-    def extract_required_statistics(statistics):
-        required_stats_keys = {
-            'cornerKicks': 'Corners',
-            'shotsOnGoal': 'Shots on Goal',
-            'totalShotsOnGoal': 'Shots',
-            'yellowCards': 'Yellow Cards',
-            'fouls': 'Fouls',
-            'offsides': 'Offsides'
-        }
-
-        stats_result = {}
-
-        for period_data in statistics:
-            period = period_data.get('period')
-            stats_result[period] = {}
-            for group in period_data.get('groups', []):
-                for item in group.get('statisticsItems', []):
-                    key = item.get('key')
-                    if key in required_stats_keys:
-                        stat_name = required_stats_keys[key]
-                        home_value = item.get('home', 0)
-                        away_value = item.get('away', 0)
-                        stats_result[period][stat_name] = {
-                            'home': home_value,
-                            'away': away_value
-                        }
-        return stats_result
-
-    live_matches = fetch_live_matches()
-
-    if not live_matches:
+    if not matches_data:
         return render_template('current_matches.html', matches=None)
-
-    matches_data = []
-
-    for event in live_matches:
-        match_id = event.get('id')
-        home_team = event.get('homeTeam', {}).get('name', 'N/A')
-        away_team = event.get('awayTeam', {}).get('name', 'N/A')
-
-        status = event.get('status', {})
-        match_status = status.get('description', 'N/A')
-
-        time_data = event.get('time', {})
-        current_minute = calculate_current_minute(time_data, match_status)
-        current_minute = int(current_minute.replace("'", "")) if current_minute is not None else None
-        if current_minute is None and match_status.lower() != "halftime":
-            continue
-
-        tournament = event.get('tournament', {})
-        league = tournament.get('name', 'N/A')
-        country = tournament.get('category', {}).get('name', 'N/A')
-
-        home_score = event.get('homeScore', {}).get('current', 0)
-        away_score = event.get('awayScore', {}).get('current', 0)
-
-        current_score1 = event.get('homeScore', {}).get('current', 0)
-        current_score2 = event.get('awayScore', {}).get('current', 0)
-        home_score_1st = event.get('homeScore', {}).get('period1', 0)
-        away_score_1st = event.get('awayScore', {}).get('period1', 0)
-        home_score_2nd = int(current_score1) - int(home_score_1st)
-        away_score_2nd = int(current_score2) - int(away_score_1st)
-
-        try:
-            if match_status.lower() == '1st half' or match_status.lower() == "halftime":
-                home_score_2nd = 0
-                away_score_2nd = 0
-                if home_score_1st != current_score1:
-                    home_score_1st = current_score1
-                if away_score_1st != current_score2:
-                    away_score_1st = current_score2
-        except:
-            pass
-
-        statistics = fetch_match_statistics(match_id)
-        stats = extract_required_statistics(statistics) if statistics else {}
-
-        matches_data.append({
-            'match_id': match_id,
-            'home_team': home_team,
-            'away_team': away_team,
-            'league': league,
-            'country': country,
-            'half': match_status.replace('half',''),
-            'current_minute': current_minute if current_minute else 'Halftime',
-            'home_score': home_score,
-            'away_score': away_score,
-            'home_score_first_half': home_score_1st,
-            'away_score_first_half': away_score_1st,
-            'home_score_second_half': home_score_2nd,
-            'away_score_second_half': away_score_2nd,
-            'stats': stats
-        })
 
     return render_template('current_matches.html', matches=matches_data)
 
+
 @app.route('/live_matches_table')
 def live_matches_table():
-    ua = UserAgent()
-    headers = {'User-Agent': ua.random}
-    url = 'https://www.sofascore.com/api/v1/sport/football/events/live'
+    matches_data = fetch_matches_from_first_server()
 
-    def fetch_live_matches():
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            return response.json().get('events', [])
-        except requests.RequestException as e:
-            return []
-
-    def fetch_match_statistics(match_id):
-        stats_url = f'https://www.sofascore.com/api/v1/event/{match_id}/statistics'
-        try:
-            response = requests.get(stats_url, headers=headers)
-            response.raise_for_status()
-            return response.json().get('statistics', [])
-        except requests.RequestException as e:
-            return []
-
-    def calculate_current_minute(time_data, match_status):
-        current_period_start = time_data.get('currentPeriodStartTimestamp')
-        initial = time_data.get('initial', 0)
-
-        if not current_period_start or match_status.lower() in ["halftime", "break", "finished", "postponed",
-                                                                "penalties", "awaiting extra time", "awaiting penalties", "1st extra","2nd extra", "awaiting"]:
-            return None
-
-        current_timestamp = time.time()
-        elapsed_time = current_timestamp - current_period_start + initial
-        current_minute = int(elapsed_time // 60)
-        return f"{current_minute}'"
-
-    def extract_required_statistics(statistics):
-        required_stats_keys = {
-            'cornerKicks': 'Corners',
-            'shotsOnGoal': 'Shots on Goal',
-            'totalShotsOnGoal': 'Shots',
-            'yellowCards': 'Yellow Cards',
-            'fouls': 'Fouls',
-            'offsides': 'Offsides'
-        }
-
-        stats_result = {}
-
-        for period_data in statistics:
-            period = period_data.get('period')
-            stats_result[period] = {}
-            for group in period_data.get('groups', []):
-                for item in group.get('statisticsItems', []):
-                    key = item.get('key')
-                    if key in required_stats_keys:
-                        stat_name = required_stats_keys[key]
-                        home_value = item.get('home', 0)
-                        away_value = item.get('away', 0)
-                        stats_result[period][stat_name] = {
-                            'home': home_value,
-                            'away': away_value
-                        }
-        return stats_result
-
-    live_matches = fetch_live_matches()
-
-    if not live_matches:
+    if not matches_data:
         return render_template('soccer/live_matches_table.html', matches=None)
 
-    matches_data = []
-
-    for event in live_matches:
-        match_id = event.get('id')
-        home_team = event.get('homeTeam', {}).get('name', 'N/A')
-        away_team = event.get('awayTeam', {}).get('name', 'N/A')
-
-        status = event.get('status', {})
-        match_status = status.get('description', 'N/A')
-
-        time_data = event.get('time', {})
-        current_minute = calculate_current_minute(time_data, match_status)
-        current_minute = int(current_minute.replace("'", "")) if current_minute is not None else None
-        if current_minute is None and match_status.lower() != "halftime":
-            continue
-
-        tournament = event.get('tournament', {})
-        league = tournament.get('name', 'N/A')
-        country = tournament.get('category', {}).get('name', 'N/A')
-
-        home_score = event.get('homeScore', {}).get('current', 0)
-        away_score = event.get('awayScore', {}).get('current', 0)
-
-        current_score1 = event.get('homeScore', {}).get('current', 0)
-        current_score2 = event.get('awayScore', {}).get('current', 0)
-        home_score_1st = event.get('homeScore', {}).get('period1', 0)
-        away_score_1st = event.get('awayScore', {}).get('period1', 0)
-        home_score_2nd = int(current_score1) - int(home_score_1st)
-        away_score_2nd = int(current_score2) - int(away_score_1st)
-
-        try:
-            if match_status.lower() == '1st half' or match_status.lower() == "halftime":
-                home_score_2nd = 0
-                away_score_2nd = 0
-                if home_score_1st != current_score1:
-                    home_score_1st = current_score1
-                if away_score_1st != current_score2:
-                    away_score_1st = current_score2
-        except:
-            pass
-
-
-
-        statistics = fetch_match_statistics(match_id)
-        stats = extract_required_statistics(statistics) if statistics else {}
-
-        matches_data.append({
-            'match_id': match_id,
-            'home_team': home_team,
-            'away_team': away_team,
-            'league': league,
-            'country': country,
-            'half': match_status.replace('half',''),
-            'current_minute': current_minute if current_minute else 'Halftime',
-            'home_score': home_score,
-            'away_score': away_score,
-            'home_score_first_half': home_score_1st,
-            'away_score_first_half': away_score_1st,
-            'home_score_second_half': home_score_2nd,
-            'away_score_second_half': away_score_2nd,
-            'stats': stats
-        })
-
     return render_template('soccer/live_matches_table.html', matches=matches_data)
+
+
+@app.route('/info')
+def info():
+    return render_template('info.html')

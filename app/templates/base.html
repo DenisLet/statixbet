@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Statixbet</title>
+    <title>BETBALANCE</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon_red.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <!-- Подключение библиотеки select2 -->
@@ -10,19 +10,19 @@
 </head>
 <body>
     <div class="navbar">
-        <a class="brand" href="{{ url_for('index') }}">Statixbet</a>
+        <a class="brand" href="{{ url_for('index') }}">BETBALANCE</a>
         <div class="sports-links">
-            <a href="{{ url_for('unity_index') }}" class="{{ 'active' if active_page == 'unity_index' else '' }}">Equlaizer</a>
+            <a href="{{ url_for('unity_index') }}" class="{{ 'active' if active_page == 'unity_index' else '' }}">FOR FUN</a>
             <a href="{{ url_for('soccer') }}" class="{{ 'active' if active_page == 'soccer' else '' }}">Soccer</a>
-            <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'basketball' else '' }}">Basketball</a>
-            <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'ice_hockey' else '' }}">Ice Hockey</a>
-            <a href="{{ url_for('under_construction') }}" class="{{ 'active' if active_page == 'handball' else '' }}">Handball</a>
+            <a href="{{ url_for('under_construction') }}" class="faded-link {{ 'active' if active_page == 'basketball' else '' }}">Basketball</a>
+            <a href="{{ url_for('under_construction') }}" class="faded-link {{ 'active' if active_page == 'ice_hockey' else '' }}">Ice Hockey</a>
+            <a href="{{ url_for('under_construction') }}" class="faded-link {{ 'active' if active_page == 'handball' else '' }}">Handball</a>
             <a href="{{ url_for('current_matches') }}" class="{{ 'active' if active_page == 'current_matches' else '' }}">Live Matches</a>
+            <a href="{{ url_for('info') }}" class="{{ 'active' if active_page == 'info' else '' }}">INFO</a>
         </div>
         {% if not current_user.is_anonymous %}
         <div class="right">
-            <span>{{ current_user.username }}</span>
-            <span>Available requests: {{ current_user.available_requests }}</span>
+            <span>requests: {{ current_user.available_requests }}</span>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
         {% else %}

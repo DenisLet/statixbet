@@ -109,9 +109,20 @@
         }
 
 function loadTeams(league) {
-    console.log('Fetching teams for league:', league);
-    fetch(`/api/teams?league=${encodeURIComponent(league)}`)
-        .then(response => response.json())
+    console.log('Fetching teams for league:', league, 'and country:', country);
+
+    if (!country) {
+        console.error('Country is undefined or null');
+        return;
+    }
+
+    fetch(`/api/teams?league=${encodeURIComponent(league)}&country=${encodeURIComponent(country)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json(); // Обрабатываем ответ как JSON
+        })
         .then(data => {
             console.log('Teams fetched:', data);
             const teamSelect = document.getElementById('team');
@@ -147,6 +158,7 @@ function loadTeams(league) {
         })
         .catch(error => console.error('Error fetching teams:', error));
 }
+
 
         function showSection(section) {
             const sections = document.querySelectorAll('.section');

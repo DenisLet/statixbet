@@ -23,8 +23,9 @@ def make_timeline(match_ids):
             if timeline.away_goals_h2 is None:
                 timeline.away_goals_h2 = []
 
-            home_goals_h2.extend(timeline.home_goals_h2)
-            away_goals_h2.extend(timeline.away_goals_h2)
+            # Добавляем список голов для каждого матча в home_goals_h2 и away_goals_h2
+            home_goals_h2.append(timeline.home_goals_h2)
+            away_goals_h2.append(timeline.away_goals_h2)
 
             # Create a list of lists for each match
             match_goals = timeline.home_goals_h2 + timeline.away_goals_h2
@@ -36,8 +37,9 @@ def make_timeline(match_ids):
             'goals_h2': goals_h2
         }
     else:
+        # Если нет данных, возвращаем списки списков с пустыми значениями
         return {
-            'home_goals_h2': [0],
-            'away_goals_h2': [0],
-            'goals_h2': [[0]]
+            'home_goals_h2': [[] for _ in match_ids],
+            'away_goals_h2': [[] for _ in match_ids],
+            'goals_h2': [[] for _ in match_ids]
         }
