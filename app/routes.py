@@ -1,15 +1,15 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory, session
+from flask import render_template, flash, redirect, url_for, request, jsonify, send_from_directory, session, Response
 from flask_login import current_user, login_user, logout_user, login_required
 import sqlalchemy as sa
-from sqlalchemy import text, func
+from sqlalchemy import func
 from urllib.parse import urlsplit
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, ResendConfirmationForm, ResetPasswordRequestForm, ResetPasswordForm
 from app.forms import SoccerLiveInput, SoccerLiveAdditionalInput, SoccerMainOddsInput, CountryLeageTeamBook
 from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds, UnibetOdds, SoccerTimeline
-from app.models import SoccerHalf1Stats, SoccerHalf2Stats
+from app.models import SoccerHalf1Stats
 from app.email import send_email, send_password_reset_email
-from app.spare_func import safe_float, count_odds_diff, get_inputed_stats
+from app.spare_func import safe_float, count_odds_diff
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
@@ -19,12 +19,16 @@ from app.for_shots_ongoal import process_shots_ongoal
 from app.for_fouls import process_fouls
 from app.for_offsides import process_offsides
 from app.for_throws_ins import process_throws_ins
-from fake_useragent import UserAgent
 import time
-import requests
 from app.matches_ids import get_matches_ids
 from app.soccer_timeliner import make_timeline
 from functools import wraps
+import urllib3
+import certifi
+import json
+import matplotlib.pyplot as plt
+import io
+from app.graphs import plot_goals, plot_area_chart
 
 @app.route('/')
 @app.route('/index')
@@ -1490,8 +1494,6 @@ def soccer_live():
                 SoccerHalf1Stats.away_yellow.between(yellows_t2 - yellows_t2_minus, yellows_t2 + yellows_t2_plus)
             )
 
-
-
         # Фильтрация по коэффициентам закрытия для команды 2
         if win_close is not None and win_close_minus is not None and win_close_plus is not None:
             team2_entries = team2_entries.filter(
@@ -1602,38 +1604,61 @@ def soccer_live():
                                 lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus,
                                 total15_open_minus,
                                 total25_open, total25_open_plus, total25_open_minus, selected_model)
-        print(match_ids)
+
+
         timeline_data = make_timeline(match_ids)
         if timeline_data:
-            print("Home Goals H2:", timeline_data['home_goals_h2'])
-            print("Away Goals H2:", timeline_data['away_goals_h2'])
-            print("Goals H2:", timeline_data['goals_h2'])
+                home_goals_h2 = timeline_data['home_goals_h2']
+                away_goals_h2 = timeline_data['away_goals_h2']
+                goals_h2 = timeline_data['goals_h2']
+
+                # Generate plots
+                home_goals_img = plot_goals(home_goals_h2, title='Home 1st goal(2 half)')
+                away_goals_img = plot_goals(away_goals_h2, title='Away 1st goal(2 half)')
+                goals_img = plot_goals(goals_h2, title='1st goal(2 half)')
+                goals_area_img = plot_area_chart(goals_h2, home_goals_h2, away_goals_h2)
         else:
-            print("No data found for the specified match_id.")
+                print("No data found for the specified match_id.")
+                home_goals_img = away_goals_img = goals_img = goals_area_img = None
 
+    try:
+        return render_template(
+            'soccer/soccer_live.html',
+            form=form,
+            additional_form=additional_form,
+            odds_form=odds_form,
+            teams_form=teams_form,
+            percentages=percentages,
+            team1_percentages=team1_percentages,
+            team2_percentages=team2_percentages,
+            country_choices=country_choices,
+            total_entries=total_entries,
+            overall_probability_over0=overall_probability_over0,
+            home_goals_img=home_goals_img,
+            away_goals_img=away_goals_img,
+            goals_img=goals_img,
+            goals_area_img=goals_area_img
+        )
+    except:
+        return render_template(
+            'soccer/soccer_live.html',
+            form=form,
+            additional_form=additional_form,
+            odds_form=odds_form,
+            teams_form=teams_form,
+            percentages=percentages,
+            team1_percentages=team1_percentages,
+            team2_percentages=team2_percentages,
+            country_choices=country_choices,
+            total_entries=total_entries,
+            overall_probability_over0=overall_probability_over0
 
-
-    return render_template(
-        'soccer/soccer_live.html',
-        form=form,
-        additional_form=additional_form,
-        odds_form=odds_form,
-        teams_form=teams_form,
-        percentages=percentages,
-        team1_percentages=team1_percentages,
-        team2_percentages=team2_percentages,
-        country_choices=country_choices,
-        total_entries=total_entries,
-        overall_probability_over0=overall_probability_over0
-    )
-
+        )
 
 
 @app.route('/get_leagues_live', methods=['GET'])
 def get_leagues_live():
     country_id = request.args.get('country_id')
-
-
     if not country_id or country_id == 'None':
         return jsonify([])
 
@@ -1646,7 +1671,6 @@ def get_leagues_live():
 
     league_choices = [(None, 'All Leagues')] + [(league.id, league.league) for league in leagues]
     return jsonify(league_choices)
-
 
 @app.route('/get_teams_live', methods=['GET'])
 def get_teams_live():
@@ -1675,17 +1699,41 @@ def perform_query(query_number):
     result = your_query_function(query_number)
     return jsonify(result)
 
+http = urllib3.PoolManager(
+    cert_reqs="CERT_REQUIRED",
+    ca_certs=certifi.where()
+)
+
 
 PUBLIC_URL = 'https://232d51760f07ba15d32352ddeead4692.loophole.site'
+CACHE_FILE = 'cache.json'
+CACHE_TIMESTAMP_FILE = 'cache_timestamp.txt'
+CACHE_EXPIRATION_TIME = 20
+def load_cached_data():
+    """Загружает данные из кеша, если кеш валиден."""
+    if os.path.exists(CACHE_FILE) and os.path.exists(CACHE_TIMESTAMP_FILE):
+        with open(CACHE_TIMESTAMP_FILE, 'r') as f:
+            timestamp = float(f.read().strip())
+        if time.time() - timestamp < CACHE_EXPIRATION_TIME:
+            with open(CACHE_FILE, 'r') as f:
+                return json.load(f)
+    return None
+
+def save_to_cache(data):
+    """Сохраняет данные в кеш и обновляет метку времени."""
+    with open(CACHE_FILE, 'w') as f:
+        json.dump(data, f)
+    with open(CACHE_TIMESTAMP_FILE, 'w') as f:
+        f.write(str(time.time()))
 
 def fetch_matches_from_first_server():
+    cached_data = load_cached_data()
+    if cached_data is not None:
+        return cached_data
+
     try:
-        response = requests.get(PUBLIC_URL, verify=False)
-        response.raise_for_status()
-        data = response.json()
-
-
-
+        response = http.request('GET', PUBLIC_URL)
+        data = json.loads(response.data.decode('utf-8'))
         processed_data = []
         for match in data:
             processed_data.append({
@@ -1704,19 +1752,23 @@ def fetch_matches_from_first_server():
                 'away_score_second_half': match.get('away_score_second_half', 0),
                 'stats': match.get('stats', {})
             })
+        save_to_cache(processed_data)
         return processed_data
-    except requests.RequestException as e:
+    except (urllib3.exceptions.HTTPError, urllib3.exceptions.NewConnectionError) as e:
         print(f"Error fetching data from first server: {e}")
-        return []
+        return cached_data  # Возвращаем старые данные из кеша, если есть
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON data: {e}")
+        return cached_data  # Возвращаем старые данные из кеша, если есть
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return cached_data  # Возвращаем старые данные из кеша, если есть
 
 @app.route('/current_matches', methods=['GET', 'POST'])
 def current_matches():
     if request.method == 'POST':
-
         return '', 200
-
     matches_data = fetch_matches_from_first_server()
-
     if not matches_data:
         return render_template('current_matches.html', matches=None)
 
