@@ -103,6 +103,9 @@
     object-fit: contain; /* Вписать изображение в контейнер без искажений */
     max-height: 400px; /* При необходимости ограничить максимальную высоту */
 }
+
+
+
     </style>
 </head>
 <body>
@@ -396,6 +399,56 @@
         </tr>
     </tbody>
 </table>
+<h3 style="text-align: center; margin-bottom: 1;">Stats for <u>case with scored goal before</u> next point(optional)</h3>
+
+<div class="form-row" style="display: flex; align-items: center; margin-bottom: 20px;">
+    <div class="input-group" style="margin-right: 10px;">
+        <label for="since1">Goal since:</label>
+        <input type="number" id="since1" name="since1" placeholder="Start time" style="width: 60px; margin-left: 5px;">
+    </div>
+
+    <div class="input-group" style="margin-right: 10px;">
+        <label for="till1">Goal till:</label>
+        <input type="number" id="till1" name="till1" placeholder="End time" style="width: 60px; margin-left: 5px;">
+    </div>
+
+    <div class="radio-group" style="margin-right: 10px;">
+        <label for="team1-1">
+            <input type="radio" id="team1-1" name="team1_group" value="team1" style="margin-left: 5px;"> Team1
+        </label>
+    </div>
+
+    <div class="radio-group" style="margin-right: 10px;">
+        <label for="team2-1">
+            <input type="radio" id="team2-1" name="team1_group" value="team2" style="margin-left: 5px;"> Team2
+        </label>
+    </div>
+</div>
+
+<div class="form-row" style="display: flex; align-items: center; margin-bottom: 20px;">
+    <div class="input-group" style="margin-right: 10px;">
+        <label for="since2">Goal since:</label>
+        <input type="number" id="since2" name="since2" placeholder="Start time" style="width: 60px; margin-left: 5px;">
+    </div>
+
+    <div class="input-group" style="margin-right: 10px;">
+        <label for="till2">Goal till:</label>
+        <input type="number" id="till2" name="till2" placeholder="End time" style="width: 60px; margin-left: 5px;">
+    </div>
+
+    <div class="radio-group" style="margin-right: 10px;">
+        <label for="team1-2">
+            <input type="radio" id="team1-2" name="team2_group" value="team1" style="margin-left: 5px;"> Team1
+        </label>
+    </div>
+
+    <div class="radio-group" style="margin-right: 10px;">
+        <label for="team2-2">
+            <input type="radio" id="team2-2" name="team2_group" value="team2" style="margin-left: 5px;"> Team2
+        </label>
+    </div>
+</div>
+
 </div>
         <div>
             {{ form.submit(class_='button full-width-button') }}
@@ -799,7 +852,10 @@
         </tbody>
     </table>
 {% endif %}
+    <hr>
+<h2 style="text-align: center;">Stats for <u>first</u> scored point</h2>
 <div class="charts-container">
+
         {% if home_goals_img %}
             <div class="chart">
                 <img src="data:image/png;base64,{{ home_goals_img }}" alt="Home 1st goal(2 half)" title="The chart shows the percentage of first goals scored in the second half by the home team.">
@@ -823,8 +879,44 @@
                 <img src="data:image/png;base64,{{ goals_area_img }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored after the 70th minute if no goals were scored in the second half before then.">
             </div>
         {% endif %}
+            {% if home_yc_img %}
+            <div class="chart">
+                <img src="data:image/png;base64,{{ home_yc_img }}" alt="Home 1st YC(2 half)" title="The chart shows the percentage of first YC  got in the second half by the home team.">
+            </div>
+        {% endif %}
+
+        {% if away_yc_img %}
+            <div class="chart">
+                <img src="data:image/png;base64,{{ away_yc_img }}" alt="Away 1st goal(2 half)" title="The chart shows the percentage of first YC  got in the second half by the away team.">
+            </div>
+        {% endif %}
+
+        {% if yc_img %}
+            <div class="chart">
+                <img src="data:image/png;base64,{{ yc_img }}" alt="1st goal(2 half)" title="The chart shows the percentage of first YC got in the second half">
+            </div>
+        {% endif %}
+
+        {% if yc_area_img %}
+            <div class="chart">
+                <img src="data:image/png;base64,{{ yc_area_img }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one YC was scored after the 80th minute if no YC were scored in the second half before then.">
+            </div>
+        {% endif %}
 
 </div>
+<h2 style="text-align: center; margin-bottom: 0;">Stats for <u>all</u> scored point</h2>
+<div class="charts-container">
+    {% if one_goal_between %}
+        <div class="chart">
+            <img src="data:image/png;base64,{{ one_goal_between }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored under all circumstances. ">
+        </div>
+    {% endif %}
+</div>
+    {% if next_goal_img %}
+        <div class="chart">
+            <img src="data:image/png;base64,{{ next_goal_img }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored under all circumstances. ">
+        </div>
+    {% endif %}
 </body>
 <script>
 function resetTable(tableId) {
@@ -995,8 +1087,55 @@ document.addEventListener('DOMContentLoaded', function() {
     sportsbookSelect.addEventListener('change', saveSelectedValues);
 });
 
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    restoreSelectedValues(); // Восстановление сохраненных значений при загрузке страницы
 
+    // Функция для сохранения введенных значений голов и команды в localStorage
+    function saveGoalAndTeamValues() {
+        localStorage.setItem('since1', document.getElementById('since1').value);
+        localStorage.setItem('till1', document.getElementById('till1').value);
+        localStorage.setItem('team1_group', document.querySelector('input[name="team1_group"]:checked')?.value);
 
+        localStorage.setItem('since2', document.getElementById('since2').value);
+        localStorage.setItem('till2', document.getElementById('till2').value);
+        localStorage.setItem('team2_group', document.querySelector('input[name="team2_group"]:checked')?.value);
+    }
+
+    // Функция для восстановления значений из localStorage
+    function restoreGoalAndTeamValues() {
+        document.getElementById('since1').value = localStorage.getItem('since1') || '';
+        document.getElementById('till1').value = localStorage.getItem('till1') || '';
+        const team1 = localStorage.getItem('team1_group');
+        if (team1) {
+            document.querySelector(`input[name="team1_group"][value="${team1}"]`).checked = true;
+        }
+
+        document.getElementById('since2').value = localStorage.getItem('since2') || '';
+        document.getElementById('till2').value = localStorage.getItem('till2') || '';
+        const team2 = localStorage.getItem('team2_group');
+        if (team2) {
+            document.querySelector(`input[name="team2_group"][value="${team2}"]`).checked = true;
+        }
+    }
+
+    // Восстанавливаем значения при загрузке
+    restoreGoalAndTeamValues();
+
+    // Сохраняем значения при изменении
+    document.getElementById('since1').addEventListener('change', saveGoalAndTeamValues);
+    document.getElementById('till1').addEventListener('change', saveGoalAndTeamValues);
+    document.querySelectorAll('input[name="team1_group"]').forEach(radio => {
+        radio.addEventListener('change', saveGoalAndTeamValues);
+    });
+
+    document.getElementById('since2').addEventListener('change', saveGoalAndTeamValues);
+    document.getElementById('till2').addEventListener('change', saveGoalAndTeamValues);
+    document.querySelectorAll('input[name="team2_group"]').forEach(radio => {
+        radio.addEventListener('change', saveGoalAndTeamValues);
+    });
+});
 </script>
 </html>
 {% endblock %}

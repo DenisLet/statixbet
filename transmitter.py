@@ -144,7 +144,7 @@ def update_matches_data():
             })
 
         matches_data = updated_data  # Обновляем данные
-        print(matches_data)
+        print(f'{time.strftime("%H:%M:%S", time.localtime())} Working...')
         if updated_data != last_sent_data:
             # Отправляем данные через WebSocket
             socketio.emit('update_matches', updated_data)

@@ -21,15 +21,16 @@ from app.for_offsides import process_offsides
 from app.for_throws_ins import process_throws_ins
 import time
 from app.matches_ids import get_matches_ids
-from app.soccer_timeliner import make_timeline
+from app.soccer_timeliner import make_timeline, make_timeline_yc
 from functools import wraps
 import urllib3
 import certifi
 import json
 import matplotlib.pyplot as plt
 import io
-from app.graphs import plot_goals, plot_area_chart
-
+from app.graphs import plot_goals, plot_area_chart, plot_yc, plot_area_chart_yc, plot_1goal_distribution, one_more_goal
+import zlib
+import pickle
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -626,6 +627,21 @@ def soccer_live():
         total25_open_plus = odds_form.total_25_open_plus.data
         total25_open_minus = odds_form.total_25_open_minus.data
 
+        since1 = request.form.get('since1')
+        till1 = request.form.get('till1')
+        team1_group = request.form.get('team1_group')
+
+        since2 = request.form.get('since2')
+        till2 = request.form.get('till2')
+        team2_group = request.form.get('team2_group')
+
+        since1 = None if since1 == '' else int(since1)
+        till1 = None if till1 == '' else int(till1)
+        since2 = None if since2 == '' else int(since2)
+        till2 = None if till2 == '' else int(till2)
+
+        print(since1, till1, team1_group, since2, till2, team2_group)
+
         if country == 'None':
             country = team1 = team2 = ''
 
@@ -703,6 +719,68 @@ def soccer_live():
                         lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
                         total25_open, total25_open_plus, total25_open_minus, selected_model
                     )
+
+                    match_ids = get_matches_ids(score_t1_form, score_t2_form, country, league, team1, team2,
+                                                xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
+                                                shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus,
+                                                shots_t2_minus,
+                                                ongoal_t1, ongoal_t1_plus, ongoal_t1_minus, ongoal_t2, ongoal_t2_plus,
+                                                ongoal_t2_minus,
+                                                poss_t1, poss_t1_plus, poss_t1_minus, poss_t2, poss_t2_plus,
+                                                poss_t2_minus,
+                                                corners_t1, corners_t1_plus, corners_t1_minus, corners_t2,
+                                                corners_t2_plus,
+                                                corners_t2_minus,
+                                                attacks_t1, attacks_t1_plus, attacks_t1_minus, attacks_t2,
+                                                attacks_t2_plus,
+                                                attacks_t2_minus,
+                                                fkicks_t1, fkicks_t1_plus, fkicks_t1_minus, fkicks_t2, fkicks_t2_plus,
+                                                fkicks_t2_minus,
+                                                throwins_t1, throwins_t1_plus, throwins_t1_minus, throwins_t2,
+                                                throwins_t2_plus,
+                                                throwins_t2_minus,
+                                                offsides_t1, offsides_t1_plus, offsides_t1_minus, offsides_t2,
+                                                offsides_t2_plus,
+                                                offsides_t2_minus,
+                                                fouls_t1, fouls_t1_plus, fouls_t1_minus, fouls_t2, fouls_t2_plus,
+                                                fouls_t2_minus,
+                                                yellows_t1, yellows_t1_plus, yellows_t1_minus, yellows_t2,
+                                                yellows_t2_plus,
+                                                yellows_t2_minus,
+                                                win_close, win_close_plus, win_close_minus, draw_close, draw_close_plus,
+                                                draw_close_minus,
+                                                lose_close, lose_close_plus, lose_close_minus, total15_close,
+                                                total15_close_plus,
+                                                total15_close_minus,
+                                                total25_close, total25_close_plus, total25_close_minus,
+                                                win_open, win_open_minus, win_open_plus, draw_open, draw_open_plus,
+                                                draw_open_minus,
+                                                lose_open, lose_open_plus, lose_open_minus, total15_open,
+                                                total15_open_plus,
+                                                total15_open_minus,
+                                                total25_open, total25_open_plus, total25_open_minus, selected_model)
+
+
+                    timeline_yc = make_timeline_yc(match_ids)
+                    print(match_ids)
+                    if timeline_yc:
+                        home_yc_h2 = timeline_yc['home_yc_h2']
+                        away_yc_h2 = timeline_yc['away_yc_h2']
+                        yc_h2 = timeline_yc['yc_h2']
+
+                        # Generate plots
+                        home_yc_img = plot_yc(home_yc_h2, title='Home 1st YC(2 half)')
+                        away_yc_img = plot_yc(away_yc_h2, title='Away 1st YC(2 half)')
+                        yc_img = plot_yc(yc_h2, title='1st YC(2 half)')
+                        yc_area_img = plot_area_chart_yc(yc_h2, home_yc_h2, away_yc_h2)
+                        print(home_yc_h2)
+                        print(away_yc_h2)
+                        print(yc_h2)
+                    else:
+                        print("No data found for the specified match_id.")
+                        home_yc_img = away_yc_img = yc_img = yc_area_img = None
+
+
                     return render_template('soccer/soccer_live.html',
                                            form=form,
                                            additional_form=additional_form,
@@ -713,7 +791,11 @@ def soccer_live():
                                            yellow_percentages=yellow_percentages,
                                            team1_yellow_percentages=team1_yellow_percentage,
                                            team2_yellow_percentages=team2_yellow_percentage,
-                                           button=button)
+                                           button=button,
+                                           home_yc_img=home_yc_img,
+                                           away_yc_img=away_yc_img,
+                                           yc_img=yc_img,
+                                           yc_area_img=yc_area_img)
 
                 if request.method == 'POST':
                     button = request.form.get('button')
@@ -1605,21 +1687,39 @@ def soccer_live():
                                 total15_open_minus,
                                 total25_open, total25_open_plus, total25_open_minus, selected_model)
 
+        timeline_goals = make_timeline(match_ids)
 
-        timeline_data = make_timeline(match_ids)
-        if timeline_data:
-                home_goals_h2 = timeline_data['home_goals_h2']
-                away_goals_h2 = timeline_data['away_goals_h2']
-                goals_h2 = timeline_data['goals_h2']
+        #print(match_ids)
+        if timeline_goals:
+            home_goals_h2 = timeline_goals['home_goals_h2']
+            away_goals_h2 = timeline_goals['away_goals_h2']
+            goals_h2 = timeline_goals['goals_h2']
+            # Generate plots
+            home_goals_img = plot_goals(home_goals_h2, title='Home 1st goal(2 half)')
+            away_goals_img = plot_goals(away_goals_h2, title='Away 1st goal(2 half)')
+            goals_img = plot_goals(goals_h2, title='1st goal(2 half)')
+            goals_area_img = plot_area_chart(goals_h2, home_goals_h2, away_goals_h2)
+            one_goal_between = plot_1goal_distribution(goals_h2)
+            next_goal_img = None
+            # Проверяем, что since1 и till1 являются целыми числами
+            if isinstance(since1, int) and isinstance(till1, int):
+                # Если since2 и till2 не заданы (None), передаем None для их значений
+                if since2 is None or till2 is None:
+                    next_goal_img = one_more_goal(goals_h2, home_goals_h2, away_goals_h2, since1, till1, team1_group,
+                                                  None, None, None)
+                # Если since2 и till2 также являются целыми числами, вызываем функцию с обеими группами параметров
+                elif isinstance(since2, int) and isinstance(till2, int):
+                    next_goal_img = one_more_goal(goals_h2, home_goals_h2, away_goals_h2, since1, till1, team1_group,
+                                                  since2, till2, team2_group)
 
-                # Generate plots
-                home_goals_img = plot_goals(home_goals_h2, title='Home 1st goal(2 half)')
-                away_goals_img = plot_goals(away_goals_h2, title='Away 1st goal(2 half)')
-                goals_img = plot_goals(goals_h2, title='1st goal(2 half)')
-                goals_area_img = plot_area_chart(goals_h2, home_goals_h2, away_goals_h2)
+
+            print()
+                # print(home_goals_h2)
+                # print(away_goals_h2)
+                # print(goals_h2)
         else:
                 print("No data found for the specified match_id.")
-                home_goals_img = away_goals_img = goals_img = goals_area_img = None
+                home_goals_img = away_goals_img = goals_img = goals_area_img = one_goal_between = next_goal_img = None
 
     try:
         return render_template(
@@ -1637,7 +1737,9 @@ def soccer_live():
             home_goals_img=home_goals_img,
             away_goals_img=away_goals_img,
             goals_img=goals_img,
-            goals_area_img=goals_area_img
+            goals_area_img=goals_area_img,
+            one_goal_between=one_goal_between,
+            next_goal_img=next_goal_img
         )
     except:
         return render_template(
@@ -1705,7 +1807,7 @@ http = urllib3.PoolManager(
 )
 
 
-PUBLIC_URL = 'https://232d51760f07ba15d32352ddeead4692.loophole.site'
+PUBLIC_URL = os.getenv('SOCCER_LIVE_URL')
 CACHE_FILE = 'cache.json'
 CACHE_TIMESTAMP_FILE = 'cache_timestamp.txt'
 CACHE_EXPIRATION_TIME = 20
@@ -1771,7 +1873,6 @@ def current_matches():
     matches_data = fetch_matches_from_first_server()
     if not matches_data:
         return render_template('current_matches.html', matches=None)
-
     return render_template('current_matches.html', matches=matches_data)
 
 
@@ -1783,6 +1884,9 @@ def live_matches_table():
         return render_template('soccer/live_matches_table.html', matches=None)
 
     return render_template('soccer/live_matches_table.html', matches=matches_data)
+
+
+
 
 
 @app.route('/info')
