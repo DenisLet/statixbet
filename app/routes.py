@@ -29,8 +29,9 @@ import json
 import matplotlib.pyplot as plt
 import io
 from app.graphs import plot_goals, plot_area_chart, plot_yc, plot_area_chart_yc, plot_1goal_distribution, one_more_goal
-import zlib
-import pickle
+import ssl
+from app.closest_matches import MatchFinder, odds_calc, extract_match_ids
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -369,6 +370,8 @@ def process_form():
     over_2_5_open = safe_float(data.get('team1_over_25', 0))
     over_2_5_open_minus = safe_float(data.get('team1_over_25_minus', 0))
     over_2_5_open_plus = safe_float(data.get('team1_over_25_plus', 0))
+    selected_team = data.get('calculate_team')
+    print(selected_team)
 
     # Convert date strings to datetime.date objects if provided
     if date_from:
@@ -382,6 +385,10 @@ def process_form():
             date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
         except ValueError:
             return jsonify({'error': 'Invalid date_to format, should be YYYY-MM-DD'}), 400
+
+
+
+
 
     sportbook_models = {
         '1xbet': XbetOdds,
@@ -480,8 +487,88 @@ def process_form():
         response = {'error': 'No matching records found'}
     else:
         response = response_list
+
+
+    match_finder = MatchFinder()
+    # Find matches
+    home_match = match_finder.find_closest_home_match(team, opponent)
+    away_match = match_finder.find_closest_away_match(team, opponent)
+    matches_with_opponent = match_finder.find_closest_matches_with_stats(team, opponent, selected_team)
+    extracted_match_ids = extract_match_ids(home_match, away_match, matches_with_opponent)
+    print(home_match)
+    print(away_match)
+    print(matches_with_opponent)
+    # print(extracted_match_ids)
+    # print(odds_calc(extracted_match_ids, selected_model))
+    odds_data = odds_calc(extracted_match_ids, selected_model)
+
     response_list = sorted(response_list, key=lambda x: x['date'], reverse=True)
-    return jsonify(response_list)
+    odds_data.append([])
+
+    def expand_odds_data(odds_data, home_match, away_match, matches_with_opponent):
+        # Создаем словарь для сопоставления данных по match_id
+        match_data = {}
+
+        # Копируем исходные данные и добавляем их в словарь match_data
+        if isinstance(odds_data, list):
+            for odds in odds_data:
+                if isinstance(odds, dict):
+                    match_id = odds.get('match_id_e')
+                    if match_id:
+                        match_data[match_id] = odds.copy()
+
+        # Обработка home_match
+        if isinstance(home_match, dict):
+            for key in ['team1', 'team2']:
+                team_data = home_match.get(key)
+                if isinstance(team_data, dict):
+                    match_id = team_data.get('match_id')
+                    if match_id and match_id in match_data:
+                        match_data[match_id].update(team_data)
+
+        # Обработка away_match
+        if isinstance(away_match, dict):
+            for key in ['team1', 'team2']:
+                team_data = away_match.get(key)
+                if isinstance(team_data, dict):
+                    match_id = team_data.get('match_id')
+                    if match_id and match_id in match_data:
+                        match_data[match_id].update(team_data)
+
+        # Обработка matches_with_opponent
+        if isinstance(matches_with_opponent, dict):
+            home_matches = matches_with_opponent.get('home_matches', {})
+            away_matches = matches_with_opponent.get('away_matches', {})
+
+            # Проверяем, что home_matches и away_matches - словари
+            if isinstance(home_matches, dict):
+                for key in ['team1', 'team2']:
+                    home_team_data = home_matches.get(key)
+                    if isinstance(home_team_data, dict):
+                        match_id = home_team_data.get('match_id')
+                        if match_id and match_id in match_data:
+                            match_data[match_id].update(home_team_data)
+
+            if isinstance(away_matches, dict):
+                for key in ['team1', 'team2']:
+                    away_team_data = away_matches.get(key)
+                    if isinstance(away_team_data, dict):
+                        match_id = away_team_data.get('match_id')
+                        if match_id and match_id in match_data:
+                            match_data[match_id].update(away_team_data)
+
+        # Преобразуем обратно в список
+        result = list(match_data.values())
+
+        return result
+
+    # Пример использования
+    expanded_odds_data = expand_odds_data(odds_data, home_match, away_match, matches_with_opponent)
+    print(expanded_odds_data)
+    return jsonify({
+        'response_list': response_list,
+        'odds_data': expanded_odds_data
+    })
 
 
 @app.route('/soccer_live', methods=['GET', 'POST'])

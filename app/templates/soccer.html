@@ -33,6 +33,13 @@
                         {% include 'soccer/country_case.html' %}
                         {% include 'soccer/odds_case.html' %}
                     </div>
+                    <div class="form-group">
+                     <label for="calculate_team">Team through which we calculate (in English):</label><br>
+                     <select id="calculate_team" name="calculate_team">
+                    <option value="">Select a team</option>
+        <!-- Options will be populated dynamically -->
+                    </select>
+                    </div>
                     <button type="submit">Submit</button>
                 </form>
                 <div id="form-data-output" style="margin-top: 20px;">
@@ -51,7 +58,9 @@
     <div id="live-section" class="section" style="display:none;">
         <!-- Content for Live section goes here -->
     </div>
-    <div id="response-output"></div>
+    <div id="odds-output"></div>
+    <div id="matches-output"></div>
+
 
     <script>
         function sortSelectOptions(selectElement) {
@@ -109,7 +118,7 @@
         }
 
 function loadTeams(league) {
-    console.log('Fetching teams for league:', league, 'and country:', country);
+    console.log('Fetching teams for league:', league);
 
     if (!country) {
         console.error('Country is undefined or null');
@@ -117,16 +126,12 @@ function loadTeams(league) {
     }
 
     fetch(`/api/teams?league=${encodeURIComponent(league)}&country=${encodeURIComponent(country)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json(); // Обрабатываем ответ как JSON
-        })
+        .then(response => response.json())
         .then(data => {
             console.log('Teams fetched:', data);
             const teamSelect = document.getElementById('team');
             const opponentSelect = document.getElementById('opponent');
+            const calculateTeamSelect = document.getElementById('calculate_team');
 
             if (teamSelect) {
                 teamSelect.innerHTML = '<option value="">All Teams</option>';
@@ -154,6 +159,20 @@ function loadTeams(league) {
                 opponentSelect.value = '';
             } else {
                 console.error('Opponent select element not found');
+            }
+
+            if (calculateTeamSelect) {
+                calculateTeamSelect.innerHTML = '<option value="">Select a team</option>';
+                data.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team;
+                    option.textContent = team;
+                    calculateTeamSelect.appendChild(option);
+                });
+                sortSelectOptions(calculateTeamSelect);
+                calculateTeamSelect.value = '';
+            } else {
+                console.error('Calculate Team select element not found');
             }
         })
         .catch(error => console.error('Error fetching teams:', error));
@@ -278,50 +297,63 @@ function handleFormSubmit(event) {
         team1_over_15_plus: document.getElementById('team1-over-1.5-plus') ? document.getElementById('team1-over-1.5-plus').value : '',
         team1_over_25: document.getElementById('team1-over-2.5') ? document.getElementById('team1-over-2.5').value : '',
         team1_over_25_minus: document.getElementById('team1-over-2.5-minus') ? document.getElementById('team1-over-2.5-minus').value : '',
-        team1_over_25_plus: document.getElementById('team1-over-2.5-plus') ? document.getElementById('team1-over-2.5-plus').value : ''
+        team1_over_25_plus: document.getElementById('team1-over-2.5-plus') ? document.getElementById('team1-over-2.5-plus').value : '',
+        calculate_team: document.getElementById('calculate_team') ? document.getElementById('calculate_team').value : ''
     };
 
     console.log('Form data:', formData); // Debugging form data
 
-    fetch('/process-form', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok ' + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Success:', data);
+fetch('/process-form', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(formData)
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error('Network response was not ok ' + response.statusText);
+    }
+    return response.json();
+})
+.then(data => {
+    console.log('Received Data:', data);
 
-        // Update the page with response data
-        const output = document.getElementById('response-output');
-        if (output) {
-            if (Array.isArray(data)) {
-                output.innerHTML = generateTable(data, formData.position);
-            } else {
-                output.innerHTML = '<p style="color: red;">Ошибка: Данные не являются массивом</p>';
-            }
+    // Обработка данных для первой таблицы
+    const matchesOutput = document.getElementById('matches-output');
+    if (matchesOutput) {
+        if (Array.isArray(data.response_list)) {
+            matchesOutput.innerHTML = generateTable(data.response_list, formData.position);
         } else {
-            console.error('Response output element not found');
+            matchesOutput.innerHTML = '<p style="color: red;">Ошибка: Данные response_list не являются массивом</p>';
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    } else {
+        console.error('Response output element not found');
+    }
 
-        // Display error on the page
-        const output = document.getElementById('response-output');
-        if (output) {
-            output.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+    // Обработка данных для второй таблицы
+    const oddsOutput = document.getElementById('odds-output');
+    if (oddsOutput) {
+        if (Array.isArray(data.odds_data)) {
+            oddsOutput.innerHTML = generateOddsTable(data.odds_data);
         } else {
-            console.error('Response output element not found');
+            oddsOutput.innerHTML = '<p style="color: red;">Ошибка: Данные odds_data не являются массивом</p>';
         }
-    });
+    } else {
+        console.error('Odds output element not found');
+    }
+})
+.catch(error => {
+    console.error('Error:', error);
+
+    // Отображение ошибки на странице
+    const output = document.getElementById('response-output');
+    if (output) {
+        output.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+    } else {
+        console.error('Response output element not found');
+    }
+});
 }
 
 function generateTable(matches, position) {
@@ -331,11 +363,8 @@ function generateTable(matches, position) {
     const opponentWinLabel = position === 'HOME' ? 'OPPONENT WIN' : 'WIN';
 
     function formatDiff(diffText) {
-        // Split the text into two parts
         const [firstPart, secondPart] = diffText.split('<br><br>');
-        // Create a class for the second part based on its value
         const getClass = (value) => value < 0 ? 'diff-negative' : 'diff-positive';
-        // Return formatted HTML with class applied to the second part
         return `
             ${firstPart}<br>
             <span class="${getClass(parseFloat(secondPart))}">${secondPart}</span>
@@ -347,7 +376,7 @@ function generateTable(matches, position) {
             table {
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 0.7em; /* Уменьшение шрифта в два раза */
+                font-size: 0.7em;
             }
             th, td {
                 border: 1px solid #ddd;
@@ -364,10 +393,10 @@ function generateTable(matches, position) {
                 background-color: #ddd;
             }
             .diff-positive {
-                background-color: #85e89d; /* Зеленый фон для положительного значения */
+                background-color: #85e89d;
             }
             .diff-negative {
-                background-color: #f3a5a8; /* Красный фон для отрицательного значения */
+                background-color: #f3a5a8;
             }
         </style>
         <table>
@@ -401,7 +430,6 @@ function generateTable(matches, position) {
     `;
 
     matches.forEach(match => {
-        // Format the scores as "0 - 0"
         const homeScore = match.home_score_ft != null ? match.home_score_ft.toFixed(0) : '0';
         const awayScore = match.away_score_ft != null ? match.away_score_ft.toFixed(0) : '0';
         const scoreText = `${homeScore} - ${awayScore}`;
@@ -427,6 +455,131 @@ function generateTable(matches, position) {
 
     tableHTML += '</tbody></table>';
     return tableHTML;
+}
+function generateOddsTable(oddsData) {
+    if (!oddsData || oddsData.length === 0) {
+        return '<p>No data available to display the table.</p>';
+    }
+
+    function generateOddsRows(odds) {
+        return `
+            <tr>
+                <td>${odds.win_home_open_e || 'N/A'}</td>
+                <td>${odds.draw_open_e || 'N/A'}</td>
+                <td>${odds.win_away_open_e || 'N/A'}</td>
+                <td>${odds.odds_2_5_open_e || 'N/A'}</td>
+            </tr>
+            <tr>
+                <td>${odds.win_home_close_e || 'N/A'}</td>
+                <td>${odds.draw_close_e || 'N/A'}</td>
+                <td>${odds.win_away_close_e || 'N/A'}</td>
+                <td>${odds.odds_2_5_close_e || 'N/A'}</td>
+            </tr>
+        `;
+    }
+
+    function generateTableForData(odds) {
+        const details = `
+            <span style="color: red;">${odds.days_since_last_match || 'N/A'}</span> days since last match,
+            <span style="color: red;">${odds.matches_played_since || 'N/A'}</span> matches played since
+        `;
+
+        return `
+            <table border="1" style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Win Home</th>
+                        <th>Draw</th>
+                        <th>Win Away</th>
+                        <th>Over 2.5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${generateOddsRows(odds)}
+                </tbody>
+            </table>
+            <p style="text-align: center;">${details}</p>
+        `;
+    }
+
+    function addHeader(headerText) {
+        return `<h3>${headerText}</h3>`;
+    }
+
+    function calculateOdds(p1, p2) {
+        if (!p1 || !p2) return 'N/A';
+        const p1_prob = 1 / p1;
+        const p2_prob = 1 / p2;
+        const p1_2 = p1_prob / (p1_prob + p2_prob);
+        const odds = 1 / p1_2;
+        return odds.toFixed(2);
+    }
+
+    let result = '';
+
+    for (let i = 0; i < oddsData.length; i += 2) {
+        const odds1 = oddsData[i];
+        const odds2 = oddsData[i + 1];
+
+        let opponentText = `<span style="color: green;">${odds1.opponent || 'Unknown Opponent'}</span>`;
+        let headerText = '';
+        if (i === 0) {
+            headerText = `Nearest matches with ${opponentText} played at home`;
+        } else if (i === 2) {
+            headerText = `Nearest matches with ${opponentText} played away`;
+        } else if (i === 4) {
+            headerText = `Nearest matches with ${opponentText} played at home`;
+        } else if (i === 6) {
+            headerText = `Nearest matches with ${opponentText} played away`;
+        }
+
+        result += `
+            <details>
+                <summary>${headerText}</summary>
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="width: 48%;">${generateTableForData(odds1)}</div>
+                    ${odds2 ? `<div style="width: 48%;">${generateTableForData(odds2)}</div>` : ''}
+                </div>
+        `;
+
+        // Calculation for home matches
+        if (i === 0 || i === 4) {
+            const p1Open = odds1.win_home_open_e ? parseFloat(odds1.win_home_open_e) : null;
+            const p2Open = odds2.win_home_open_e ? parseFloat(odds2.win_home_open_e) : null;
+            const p1Close = odds1.win_home_close_e ? parseFloat(odds1.win_home_close_e) : null;
+            const p2Close = odds2.win_home_close_e ? parseFloat(odds2.win_home_close_e) : null;
+
+            const calculatedOpenOdds = calculateOdds(p1Open, p2Open);
+            const calculatedCloseOdds = calculateOdds(p1Close, p2Close);
+
+            result += `
+                <p><strong>Calculated Home Win Odds:</strong>
+                Open: <span style="color: green;">${calculatedOpenOdds}</span> /
+                Closed: <span style="color: green;">${calculatedCloseOdds}</span></p>
+            `;
+        }
+
+        // Calculation for away matches
+        if (i === 2 || i === 6) {
+            const p1Open = odds1.win_away_open_e ? parseFloat(odds1.win_away_open_e) : null;
+            const p2Open = odds2.win_away_open_e ? parseFloat(odds2.win_away_open_e) : null;
+            const p1Close = odds1.win_away_close_e ? parseFloat(odds1.win_away_close_e) : null;
+            const p2Close = odds2.win_away_close_e ? parseFloat(odds2.win_away_close_e) : null;
+
+            const calculatedOpenOdds = calculateOdds(p1Open, p2Open);
+            const calculatedCloseOdds = calculateOdds(p1Close, p2Close);
+
+            result += `
+                <p><strong>Calculated Away Win Odds:</strong>
+                Open: <span style="color: green;">${calculatedOpenOdds}</span> /
+                Closed: <span style="color: green;">${calculatedCloseOdds}</span></p>
+            `;
+        }
+
+        result += `</details>`;
+    }
+
+    return result;
 }
     </script>
 {% endblock %}

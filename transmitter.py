@@ -13,7 +13,7 @@ last_request_time = 0  # Время последнего GET-запроса
 last_sent_data = []  # Последние отправленные данные
 
 
-SEND_INTERVAL = 30
+SEND_INTERVAL = 10
 TARGET_URL = 'http://127.0.0.1:5000/current_matches'
 
 def fetch_live_matches():
@@ -150,7 +150,7 @@ def update_matches_data():
             socketio.emit('update_matches', updated_data)
             last_sent_data = updated_data  # Обновляем отправленные данные
 
-        time.sleep(30)
+        time.sleep(10)
 
 def auto_send_if_no_requests():
     global last_request_time
@@ -159,7 +159,7 @@ def auto_send_if_no_requests():
         if current_time - last_request_time > SEND_INTERVAL and matches_data:
             # Отправляем данные через WebSocket
             socketio.emit('update_matches', matches_data)
-        time.sleep(30)
+        time.sleep(10)
 @app.route('/', methods=['GET'])
 @app.route('/api/live_matches', methods=['GET'])
 def get_live_matches():
