@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Pre-match stats Scan</h2>
+<form id="soccerPrematchForm">
+    <!-- Включаем первую форму -->
+    {% include "soccer/country_case.html" %}
+
+    <!-- Включаем вторую форму -->
+    {% include "soccer/odds_case.html" %}
+
+    <!-- Кнопка для отправки формы -->
+    <button type="submit">Submit</button>
+</form>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция для заполнения выпадающего списка
+    function populateSelect(id, options) {
+        const select = document.getElementById(id);
+        select.innerHTML = '<option value="">Select an option</option>'; // Очистить текущие опции
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            select.appendChild(opt);
+        });
+    }
+
+    // Функция для загрузки данных с сервера
+    async function loadData() {
+        try {
+            // Загрузить страны
+            const responseCountries = await fetch('/api/countries');
+            const countries = await responseCountries.json();
+            populateSelect('country', countries);
+
+            // Обработчик изменения страны
+            document.getElementById('country').addEventListener('change', async function() {
+                const country = this.value;
+                if (country) {
+                    const responseLeagues = await fetch(`/api/leagues?country=${country}`);
+                    const leagues = await responseLeagues.json();
+                    populateSelect('league', leagues);
+                    populateSelect('team', []);  // Очистить команды при смене страны
+                    populateSelect('opponent', []);  // Очистить соперников при смене страны
+                } else {
+                    populateSelect('league', []);
+                    populateSelect('team', []);
+                    populateSelect('opponent', []);
+                }
+            });
+
+            // Обработчик изменения лиги
+            document.getElementById('league').addEventListener('change', async function() {
+                const league = this.value;
+                const country = document.getElementById('country').value;
+                if (league && country) {
+                    const responseTeams = await fetch(`/api/teams?league=${league}`);
+                    const teams = await responseTeams.json();
+                    populateSelect('team', teams);
+                    populateSelect('opponent', []);  // Очистить соперников при смене лиги
+                } else {
+                    populateSelect('team', []);
+                    populateSelect('opponent', []);
+                }
+            });
+
+            // Обработчик изменения команды
+            document.getElementById('team').addEventListener('change', async function() {
+                const team = this.value;
+                const league = document.getElementById('league').value;
+                const country = document.getElementById('country').value;
+                if (team && league && country) {
+                    const responseOpponents = await fetch(`/api/teams?league=${league}`);
+                    const opponents = await responseOpponents.json();
+                    populateSelect('opponent', opponents);
+                } else {
+                    populateSelect('opponent', []);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    // Запуск загрузки данных при загрузке страницы
+    loadData();
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция для заполнения выпадающего списка
+    function populateSelect(id, options) {
+        const select = document.getElementById(id);
+        select.innerHTML = '<option value="">Select an option</option>'; // Очистить текущие опции
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            select.appendChild(opt);
+        });
+    }
+
+    // Функция для загрузки данных с сервера
+    async function loadData() {
+        try {
+            // Загрузить страны
+            const responseCountries = await fetch('/api/countries');
+            const countries = await responseCountries.json();
+            populateSelect('country', countries);
+
+            // Обработчик изменения страны
+            document.getElementById('country').addEventListener('change', async function() {
+                const country = this.value;
+                if (country) {
+                    const responseLeagues = await fetch(`/api/leagues?country=${country}`);
+                    const leagues = await responseLeagues.json();
+                    populateSelect('league', leagues);
+                    populateSelect('team', []);  // Очистить команды при смене страны
+                    populateSelect('opponent', []);  // Очистить соперников при смене страны
+                } else {
+                    populateSelect('league', []);
+                    populateSelect('team', []);
+                    populateSelect('opponent', []);
+                }
+            });
+
+            // Обработчик изменения лиги
+            document.getElementById('league').addEventListener('change', async function() {
+                const league = this.value;
+                const country = document.getElementById('country').value;
+                if (league && country) {
+                    const responseTeams = await fetch(`/api/teams?league=${league}`);
+                    const teams = await responseTeams.json();
+                    populateSelect('team', teams);
+                    populateSelect('opponent', []);  // Очистить соперников при смене лиги
+                } else {
+                    populateSelect('team', []);
+                    populateSelect('opponent', []);
+                }
+            });
+
+            // Обработчик изменения команды
+            document.getElementById('team').addEventListener('change', async function() {
+                const team = this.value;
+                const league = document.getElementById('league').value;
+                const country = document.getElementById('country').value;
+                if (team && league && country) {
+                    const responseOpponents = await fetch(`/api/teams?league=${league}`);
+                    const opponents = await responseOpponents.json();
+                    populateSelect('opponent', opponents);
+                } else {
+                    populateSelect('opponent', []);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+    }
+
+    // Запуск загрузки данных при загрузке страницы
+    loadData();
+});
+
+// Функция для отправки формы
+async function submitForm() {
+    const formData = new FormData(document.getElementById('soccerPrematchForm'));
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    try {
+        const response = await fetch('/soccer_prematch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('Error submitting form.');
+    }
+}
+
+// Привязать эту функцию к кнопке "Submit"
+document.getElementById('soccerPrematchForm').addEventListener('submit', function(event) {
+    event.preventDefault();  // Предотвратить стандартное поведение формы
+    submitForm();
+});
+
+    </script>
+{% endblock %}

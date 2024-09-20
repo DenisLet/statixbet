@@ -495,9 +495,13 @@ def process_form():
     away_match = match_finder.find_closest_away_match(team, opponent)
     matches_with_opponent = match_finder.find_closest_matches_with_stats(team, opponent, selected_team)
     extracted_match_ids = extract_match_ids(home_match, away_match, matches_with_opponent)
+    print()
     print(home_match)
+    print()
     print(away_match)
+    print()
     print(matches_with_opponent)
+    print()
     # print(extracted_match_ids)
     # print(odds_calc(extracted_match_ids, selected_model))
     odds_data = odds_calc(extracted_match_ids, selected_model)
@@ -1973,9 +1977,22 @@ def live_matches_table():
     return render_template('soccer/live_matches_table.html', matches=matches_data)
 
 
-
-
-
 @app.route('/info')
 def info():
     return render_template('info.html')
+
+
+@app.route('/soccer_prematch', methods=['GET', 'POST'])
+def soccer_prematch():
+    if request.method == 'POST':
+        # Получение данных из POST-запроса
+        data = request.json  # Если данные отправлены в формате JSON
+        if not data:
+            data = request.form  # Если данные отправлены в формате URL-encoded
+
+        print("Received data:", data)  # Печать данных в консоль
+
+        return jsonify({'message': 'Data received successfully!'}), 200
+
+    # Если метод GET, просто отобразите страницу
+    return render_template('soccer/soccer_prematch.html')

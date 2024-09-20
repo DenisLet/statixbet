@@ -59,9 +59,11 @@ class MatchFinder:
         with app.app_context():
             today = date.today()
 
-            # Найти домашние матчи для team1 и team2
-            matches_team1 = db.session.query(SoccerMain).filter(SoccerMain.team_home == team1).all()
-            matches_team2 = db.session.query(SoccerMain).filter(SoccerMain.team_home == team2).all()
+            # Найти домашние матчи для team1 и team2, отсортированные по возрастанию даты
+            matches_team1 = db.session.query(SoccerMain).filter(SoccerMain.team_home == team1).order_by(
+                SoccerMain.match_date).all()
+            matches_team2 = db.session.query(SoccerMain).filter(SoccerMain.team_home == team2).order_by(
+                SoccerMain.match_date).all()
 
             closest_match = None
             min_date_diff = None
@@ -86,20 +88,22 @@ class MatchFinder:
             return None
 
     def find_closest_away_match(self, team1, team2):
-        """ Найти ближайший матч, где команды играют в гостях против одного соперника (без указания соперника) """
+        """ Найти ближайший матч, где обе команды играют на выезде против одного соперника """
         with app.app_context():
             today = date.today()
 
             # Найти гостевые матчи для team1 и team2
-            matches_team1 = db.session.query(SoccerMain).filter(SoccerMain.team_away == team1).all()
-            matches_team2 = db.session.query(SoccerMain).filter(SoccerMain.team_away == team2).all()
+            matches_team1 = db.session.query(SoccerMain).filter(SoccerMain.team_away == team1).order_by(
+                SoccerMain.match_date).all()
+            matches_team2 = db.session.query(SoccerMain).filter(SoccerMain.team_away == team2).order_by(
+                SoccerMain.match_date).all()
 
             closest_match = None
             min_date_diff = None
 
             # Поиск матчей для team1
             for match1 in matches_team1:
-                # Поиск матчей для team2 против того же соперника (дома)
+                # Поиск матчей для team2 с тем же соперником (домашним)
                 for match2 in matches_team2:
                     if match1.team_home == match2.team_home:  # Один и тот же соперник дома
                         # Проверка разницы дат
