@@ -2,7 +2,7 @@ from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Od
 from app.models import SoccerHalf1Stats, SoccerHalf2Stats
 from sqlalchemy import func
 from app import app, db
-
+from sqlalchemy.orm import aliased
 
 def process_corners(
         score_t1_form, score_t2_form, country, league, team1, team2,
@@ -24,6 +24,8 @@ def process_corners(
         lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
         total25_open, total25_open_plus, total25_open_minus, selected_model
 ):
+    SoccerMainAlias = aliased(SoccerMain)
+
     corners_query = db.session.query(
         (SoccerHalf2Stats.home_corners + SoccerHalf2Stats.away_corners).label('total_corners_h2'),
         func.count().label('count')
@@ -33,11 +35,14 @@ def process_corners(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         SoccerHalf2Stats.home_corners >= 0,
         SoccerHalf2Stats.away_corners >= 0,
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -246,10 +251,11 @@ def process_corners(
         for entry in corners_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
-
+    # Запрос для угловых команды 1
     corners_query_team1 = db.session.query(
-        (SoccerHalf2Stats.home_corners).label('team1_corners_h2'),
+        SoccerHalf2Stats.home_corners.label('team1_corners_h2'),
         func.count().label('count')
     ).join(
         SoccerTimeline, SoccerTimeline.match_id == SoccerHalf2Stats.match_id
@@ -257,11 +263,14 @@ def process_corners(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         SoccerHalf2Stats.home_corners >= 0,
         SoccerHalf2Stats.away_corners >= 0,
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -471,12 +480,11 @@ def process_corners(
         for entry in team1_corners_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
-
-
-
+    # Запрос для угловых команды 2
     corners_query_team2 = db.session.query(
-        (SoccerHalf2Stats.away_corners).label('team2_corners_h2'),
+        SoccerHalf2Stats.away_corners.label('team2_corners_h2'),
         func.count().label('count')
     ).join(
         SoccerTimeline, SoccerTimeline.match_id == SoccerHalf2Stats.match_id
@@ -484,11 +492,14 @@ def process_corners(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         SoccerHalf2Stats.home_corners >= 0,
         SoccerHalf2Stats.away_corners >= 0,
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам

@@ -2,7 +2,7 @@ from app.models import ChampionshipsSoccer, SoccerMain, SoccerTimeline
 from app.models import SoccerHalf1Stats, SoccerHalf2Stats
 from sqlalchemy import func, text
 from app import db
-
+from sqlalchemy.orm import aliased
 
 def process_yellow_cards(
         score_t1_form, score_t2_form, country, league, team1, team2,
@@ -24,6 +24,9 @@ def process_yellow_cards(
         lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
         total25_open, total25_open_plus, total25_open_minus, selected_model
 ):
+    SoccerMainAlias = aliased(SoccerMain)
+
+    # Запрос для желтых карточек
     yellow_query = db.session.query(
         (SoccerTimeline.yellow_t1_h2 + SoccerTimeline.yellow_t2_h2).label('total_yellows_h2'),
         func.count().label('count')
@@ -35,9 +38,12 @@ def process_yellow_cards(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
         (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -249,9 +255,11 @@ def process_yellow_cards(
         for entry in yellow_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
+    # Запрос для желтых карточек команды 1
     yellow_query_team1 = db.session.query(
-        (SoccerTimeline.yellow_t1_h2).label('team1_yellows_h2'),
+        SoccerTimeline.yellow_t1_h2.label('team1_yellows_h2'),
         func.count().label('count')
     ).select_from(
         SoccerTimeline
@@ -261,9 +269,12 @@ def process_yellow_cards(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -472,9 +483,11 @@ def process_yellow_cards(
         for entry in team1_yellow_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
+    # Запрос для желтых карточек команды 2
     yellow_query_team2 = db.session.query(
-        (SoccerTimeline.yellow_t2_h2).label('team2_yellows_h2'),
+        SoccerTimeline.yellow_t2_h2.label('team2_yellows_h2'),
         func.count().label('count')
     ).select_from(
         SoccerTimeline
@@ -484,9 +497,12 @@ def process_yellow_cards(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+        (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам

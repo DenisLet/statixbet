@@ -11,7 +11,6 @@
         <div id="sub-buttons" class="sub-buttons" style="display:none;">
             <button id="odds-scan-button" class="sub-button" onclick="showSubSection('odds-scan')">Odds Scan</button>
             <button id="stat-scan-button" class="sub-button" onclick="window.location.href='{{ url_for('soccer_prematch') }}'">Stat Scan</button>
-            <button id="test-scan-button" class="sub-button" onclick="showSubSection('test-scan')">Test Scan</button>
         </div>
     </div>
 
@@ -34,7 +33,7 @@
                         {% include 'soccer/odds_case.html' %}
                     </div>
                     <div class="form-group">
-                     <label for="calculate_team">Team through which we calculate (in English):</label><br>
+                     <label for="calculate_team">Team through which we calculate:</label><br>
                      <select id="calculate_team" name="calculate_team">
                     <option value="">Select a team</option>
         <!-- Options will be populated dynamically -->
@@ -58,6 +57,7 @@
     <div id="live-section" class="section" style="display:none;">
         <!-- Content for Live section goes here -->
     </div>
+
     <div id="odds-output"></div>
     <div id="matches-output"></div>
 
@@ -515,6 +515,49 @@ function generateOddsTable(oddsData) {
         return odds.toFixed(2);
     }
 
+    function calculateMatchOdds(odds1, odds2) {
+        // Открытые коэффициенты
+        const team1WINteam3_open = 1 / parseFloat(odds1.win_home_open_e);
+        const Draw1_open = 1 / parseFloat(odds1.draw_open_e);
+        const team3WINteam1_open = 1 / parseFloat(odds1.win_away_open_e);
+        const team2WINteam3_open = 1 / parseFloat(odds2.win_home_open_e);
+        const Draw2_open = 1 / parseFloat(odds2.draw_open_e);
+        const team3WINteam2_open = 1 / parseFloat(odds2.win_away_open_e);
+
+        // Закрытые коэффициенты
+        const team1WINteam3_close = 1 / parseFloat(odds1.win_home_close_e);
+        const Draw1_close = 1 / parseFloat(odds1.draw_close_e);
+        const team3WINteam1_close = 1 / parseFloat(odds1.win_away_close_e);
+        const team2WINteam3_close = 1 / parseFloat(odds2.win_home_close_e);
+        const Draw2_close = 1 / parseFloat(odds2.draw_close_e);
+        const team3WINteam2_close = 1 / parseFloat(odds2.win_away_close_e);
+
+
+
+        // Вероятности для открытых коэффициентов
+        const pTeam1vsTeam2_open = (team1WINteam3_open / team3WINteam1_open) * team3WINteam2_open;
+        const pTeam2vsTeam1_open = (team2WINteam3_open / team3WINteam2_open) * team3WINteam1_open;
+        const pDraw_open = Math.sqrt(Draw1_open * Draw2_open);
+
+        // Вероятности для закрытых коэффициентов
+        const pTeam1vsTeam2_close = (team1WINteam3_close / team3WINteam1_close) * team3WINteam2_close;
+        const pTeam2vsTeam1_close = (team2WINteam3_close / team3WINteam2_close) * team3WINteam1_close;
+        const pDraw_close = Math.sqrt(Draw1_close * Draw2_close);
+
+        return {
+            open: {
+                team1WinOdds: (1 / pTeam1vsTeam2_open).toFixed(2),
+                drawOdds: (1 / pDraw_open).toFixed(2),
+                team2WinOdds: (1 / pTeam2vsTeam1_open).toFixed(2)
+            },
+            close: {
+                team1WinOdds: (1 / pTeam1vsTeam2_close).toFixed(2),
+                drawOdds: (1 / pDraw_close).toFixed(2),
+                team2WinOdds: (1 / pTeam2vsTeam1_close).toFixed(2)
+            }
+        };
+    }
+
     let result = '';
 
     for (let i = 0; i < oddsData.length; i += 2) {
@@ -553,7 +596,7 @@ function generateOddsTable(oddsData) {
             const calculatedCloseOdds = calculateOdds(p1Close, p2Close);
 
             result += `
-                <p><strong>Calculated Home Win Odds:</strong>
+                <p><strong><span title="Approximate information for preliminary analysis">Huge*</span> approx. team Win Odds:</strong>
                 Open: <span style="color: green;">${calculatedOpenOdds}</span> /
                 Closed: <span style="color: green;">${calculatedCloseOdds}</span></p>
             `;
@@ -570,13 +613,28 @@ function generateOddsTable(oddsData) {
             const calculatedCloseOdds = calculateOdds(p1Close, p2Close);
 
             result += `
-                <p><strong>Calculated Away Win Odds:</strong>
+                <p><strong><span title="Approximate information for preliminary analysis">Huge*</span> approx. team Win Odds:</strong>
                 Open: <span style="color: green;">${calculatedOpenOdds}</span> /
                 Closed: <span style="color: green;">${calculatedCloseOdds}</span></p>
             `;
         }
 
-        result += `</details>`;
+<!--        // Calculate and display match odds-->
+<!--        if (odds2) {-->
+<!--            const matchOdds = calculateMatchOdds(odds1, odds2);-->
+<!--            result += `-->
+<!--                <p><strong>Calculated Match Odds:</strong>-->
+<!--                Team 1 Win (Open): <span style="color: green;">${matchOdds.open.team1WinOdds}</span> /-->
+<!--                Draw (Open): <span style="color: green;">${matchOdds.open.drawOdds}</span> /-->
+<!--                Team 2 Win (Open): <span style="color: green;">${matchOdds.open.team2WinOdds}</span></p>-->
+<!--                <p><strong>Calculated Match Odds:</strong>-->
+<!--                Team 1 Win (Close): <span style="color: green;">${matchOdds.close.team1WinOdds}</span> /-->
+<!--                Draw (Close): <span style="color: green;">${matchOdds.close.drawOdds}</span> /-->
+<!--                Team 2 Win (Close): <span style="color: green;">${matchOdds.close.team2WinOdds}</span></p>-->
+<!--            `;-->
+<!--        }-->
+
+        result += '</details>';
     }
 
     return result;

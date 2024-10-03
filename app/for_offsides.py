@@ -2,7 +2,7 @@ from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Od
 from app.models import SoccerHalf1Stats, SoccerHalf2Stats
 from sqlalchemy import func
 from app import app, db
-
+from sqlalchemy.orm import aliased
 
 def process_offsides(
         score_t1_form, score_t2_form, country, league, team1, team2,
@@ -24,6 +24,9 @@ def process_offsides(
         lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
         total25_open, total25_open_plus, total25_open_minus, selected_model
 ):
+    SoccerMainAlias = aliased(SoccerMain)
+
+    # Запрос для офсайдов
     offsides_query = db.session.query(
         (SoccerHalf2Stats.home_offsides + SoccerHalf2Stats.away_offsides).label('total_offsides_h2'),
         func.count().label('count')
@@ -33,11 +36,14 @@ def process_offsides(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
         (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
         SoccerHalf2Stats.home_offsides.between(0, 10),
-        SoccerHalf2Stats.away_offsides.between(0, 10)
+        SoccerHalf2Stats.away_offsides.between(0, 10),
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -246,10 +252,11 @@ def process_offsides(
         for entry in offsides_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
-
+    # Запрос для офсайдов команды 1
     offsides_query_team1 = db.session.query(
-        (SoccerHalf2Stats.home_offsides).label('team1_offsides_h2'),
+        SoccerHalf2Stats.home_offsides.label('team1_offsides_h2'),
         func.count().label('count')
     ).join(
         SoccerTimeline, SoccerTimeline.match_id == SoccerHalf2Stats.match_id
@@ -257,11 +264,14 @@ def process_offsides(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
         (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
         SoccerHalf2Stats.home_offsides.between(0, 12),
-        SoccerHalf2Stats.away_offsides.between(0, 12)
+        SoccerHalf2Stats.away_offsides.between(0, 12),
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам
@@ -471,12 +481,11 @@ def process_offsides(
         for entry in team1_offsides_entries
     ]
 
+    SoccerMainAlias = aliased(SoccerMain)
 
-
-
-
+    # Запрос для офсайдов команды 2
     offsides_query_tean2 = db.session.query(
-        (SoccerHalf2Stats.away_offsides).label('team2_offsides_h2'),
+        SoccerHalf2Stats.away_offsides.label('team2_offsides_h2'),
         func.count().label('count')
     ).join(
         SoccerTimeline, SoccerTimeline.match_id == SoccerHalf2Stats.match_id
@@ -484,11 +493,14 @@ def process_offsides(
         selected_model, SoccerTimeline.match_id == selected_model.match_id
     ).join(
         SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+    ).join(
+        SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
     ).filter(
         (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
         (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
         SoccerHalf2Stats.home_offsides.between(0, 12),
-        SoccerHalf2Stats.away_offsides.between(0, 12)
+        SoccerHalf2Stats.away_offsides.between(0, 12),
+        SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
     )
 
     # Фильтрация по странам, лигам и командам

@@ -451,7 +451,7 @@ def plot_1yc_distribution(goals_h2):
     period_values = [goals_by_period[i] for i in range(10)]
 
     # Рассчитываем сумму голов для периодов от 76 и выше
-    summed_period_values = sum(period_values[5:])
+    summed_period_values = sum(period_values[6:])
 
     # Создаем фигуру
     plt.figure(figsize=(10, 6))

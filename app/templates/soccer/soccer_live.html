@@ -466,10 +466,12 @@
         <hr>
     </form>
 {% if percentages %}
-    <h3>
-    Cases: <span style="color: red;">{{ total_entries }}</span>
-    - Accurate probability of goal in 2 half:
-    <span style="color: red;">{{ (overall_probability_over0 * 100)|round(2) }}%</span>
+<h3>
+    Cases: <span style="color: red;">{{ total_entries }}</span> - calc. % in 2 half:
+    <br>
+    over 0 - <span style="color: red;">{{ (overall_probability_over0 * 100)|round(2) }}%</span>
+    =1 - <span style="color: red;">{{ eval1 }}%</span>
+    over 1 - <span style="color: red;">{{ gth1 }}%</span>
 </h3>
     <table>
         <thead>
@@ -911,12 +913,24 @@
             <img src="data:image/png;base64,{{ one_goal_between }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored under all circumstances. ">
         </div>
     {% endif %}
+        {% if one_yc_between %}
+        <div class="chart">
+            <img src="data:image/png;base64,{{ one_yc_between }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one yc was scored under all circumstances. ">
+        </div>
+    {% endif %}
+
+
 
 </div>
-        <h2 style="text-align: center; margin-bottom: 0;">case with scored goal before</h2>
+        <h2 style="text-align: center; margin-bottom: 0;">case with scored goal(yc) before</h2>
     {% if next_goal_img %}
         <div class="chart">
             <img src="data:image/png;base64,{{ next_goal_img }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored under all circumstances. ">
+        </div>
+    {% endif %}
+        {% if next_yc_img %}
+        <div class="chart">
+            <img src="data:image/png;base64,{{ next_yc_img }}" alt="Area Chart of Goals" title="The chart shows the percentage of matches where at least one goal was scored under all circumstances. ">
         </div>
     {% endif %}
 </body>
@@ -924,18 +938,18 @@
 function resetTable(tableId) {
     const table = document.getElementById(tableId);
 
-    // Здесь можно добавить логику сброса параметров таблицы,
-    // например, очистить все значения в input, select или других элементах таблицы.
-
-    // Пример сброса значений в input полях внутри таблицы
+    // Сброс значений в input полях до их дефолтного значения
     const inputs = table.querySelectorAll('input');
-    inputs.forEach(input => input.value = '');
+    inputs.forEach(input => input.value = input.defaultValue);
 
-    // Пример сброса значений в select полях внутри таблицы
+    // Сброс значений в select полях до их дефолтного значения
     const selects = table.querySelectorAll('select');
-    selects.forEach(select => select.selectedIndex = 0);
+    selects.forEach(select => {
+        const defaultOption = Array.from(select.options).find(option => option.defaultSelected);
+        select.value = defaultOption ? defaultOption.value : select.options[0].value;
+    });
 
-    // Дополнительно можно очищать локальное хранилище или обновлять данные
+    // Очистка локального хранилища, если необходимо
     localStorage.removeItem('selectedCountry');
     localStorage.removeItem('selectedLeague');
     localStorage.removeItem('selectedTeamHome');

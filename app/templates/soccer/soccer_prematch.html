@@ -1,173 +1,120 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-width: 1px;
+    padding: 8px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+h3 {
+    margin-top: 20px;
+}</style>
     <h2>Pre-match stats Scan</h2>
-<form id="soccerPrematchForm">
-    <!-- Включаем первую форму -->
-    {% include "soccer/country_case.html" %}
+    <form id="soccerPrematchForm">
+        <!-- Включаем первую форму -->
+        {% include "soccer/country_case_prematch.html" %}
 
-    <!-- Включаем вторую форму -->
-    {% include "soccer/odds_case.html" %}
+        <!-- Включаем вторую форму -->
+        {% include "soccer/odds_case_prematch.html" %}
 
-    <!-- Кнопка для отправки формы -->
-    <button type="submit">Submit</button>
-</form>
+        <!-- Кнопка для отправки формы -->
+        <button type="submit">Submit</button>
+        <div id="resultsContainer" style="margin-top: 20px;"></div>
+    </form>
+
+
+
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Функция для заполнения выпадающего списка
-    function populateSelect(id, options) {
-        const select = document.getElementById(id);
-        select.innerHTML = '<option value="">Select an option</option>'; // Очистить текущие опции
-        options.forEach(option => {
-            const opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option;
-            select.appendChild(opt);
-        });
-    }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Функция для заполнения выпадающего списка
+            function populateSelect(id, options) {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="">Select an option</option>'; // Очистить текущие опции
+                options.forEach(option => {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    select.appendChild(opt);
+                });
+            }
 
-    // Функция для загрузки данных с сервера
-    async function loadData() {
-        try {
-            // Загрузить страны
-            const responseCountries = await fetch('/api/countries');
-            const countries = await responseCountries.json();
-            populateSelect('country', countries);
+            // Функция для загрузки данных с сервера
+            async function loadData() {
+                try {
+                    // Загрузить страны
+                    const responseCountries = await fetch('/api/countries');
+                    const countries = await responseCountries.json();
+                    populateSelect('country', countries);
 
-            // Обработчик изменения страны
-            document.getElementById('country').addEventListener('change', async function() {
-                const country = this.value;
-                if (country) {
-                    const responseLeagues = await fetch(`/api/leagues?country=${country}`);
-                    const leagues = await responseLeagues.json();
-                    populateSelect('league', leagues);
-                    populateSelect('team', []);  // Очистить команды при смене страны
-                    populateSelect('opponent', []);  // Очистить соперников при смене страны
-                } else {
-                    populateSelect('league', []);
-                    populateSelect('team', []);
-                    populateSelect('opponent', []);
+                    // Обработчик изменения страны
+                    document.getElementById('country').addEventListener('change', async function() {
+                        const country = this.value;
+                        if (country) {
+                            const responseLeagues = await fetch(`/api/leagues?country=${country}`);
+                            const leagues = await responseLeagues.json();
+                            populateSelect('league', leagues);
+                            populateSelect('team', []);  // Очистить команды при смене страны
+                            populateSelect('opponent', []);  // Очистить соперников при смене страны
+                        } else {
+                            populateSelect('league', []);
+                            populateSelect('team', []);
+                            populateSelect('opponent', []);
+                        }
+                    });
+
+                    // Обработчик изменения лиги
+                    document.getElementById('league').addEventListener('change', async function() {
+                        const league = this.value;
+                        const country = document.getElementById('country').value;
+                        if (league && country) {
+                            const responseTeams = await fetch(`/api/teams?league=${league}`);
+                            const teams = await responseTeams.json();
+                            populateSelect('team', teams);
+                            populateSelect('opponent', []);  // Очистить соперников при смене лиги
+                        } else {
+                            populateSelect('team', []);
+                            populateSelect('opponent', []);
+                        }
+                    });
+
+                    // Обработчик изменения команды
+                    document.getElementById('team').addEventListener('change', async function() {
+                        const team = this.value;
+                        const league = document.getElementById('league').value;
+                        const country = document.getElementById('country').value;
+                        if (team && league && country) {
+                            const responseOpponents = await fetch(`/api/teams?league=${league}`);
+                            const opponents = await responseOpponents.json();
+                            populateSelect('opponent', opponents);
+                        } else {
+                            populateSelect('opponent', []);
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error loading data:', error);
                 }
-            });
-
-            // Обработчик изменения лиги
-            document.getElementById('league').addEventListener('change', async function() {
-                const league = this.value;
-                const country = document.getElementById('country').value;
-                if (league && country) {
-                    const responseTeams = await fetch(`/api/teams?league=${league}`);
-                    const teams = await responseTeams.json();
-                    populateSelect('team', teams);
-                    populateSelect('opponent', []);  // Очистить соперников при смене лиги
-                } else {
-                    populateSelect('team', []);
-                    populateSelect('opponent', []);
-                }
-            });
-
-            // Обработчик изменения команды
-            document.getElementById('team').addEventListener('change', async function() {
-                const team = this.value;
-                const league = document.getElementById('league').value;
-                const country = document.getElementById('country').value;
-                if (team && league && country) {
-                    const responseOpponents = await fetch(`/api/teams?league=${league}`);
-                    const opponents = await responseOpponents.json();
-                    populateSelect('opponent', opponents);
-                } else {
-                    populateSelect('opponent', []);
-                }
-            });
-
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    }
-
-    // Запуск загрузки данных при загрузке страницы
-    loadData();
-});
-document.addEventListener('DOMContentLoaded', function() {
-    // Функция для заполнения выпадающего списка
-    function populateSelect(id, options) {
-        const select = document.getElementById(id);
-        select.innerHTML = '<option value="">Select an option</option>'; // Очистить текущие опции
-        options.forEach(option => {
-            const opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option;
-            select.appendChild(opt);
-        });
-    }
-
-    // Функция для загрузки данных с сервера
-    async function loadData() {
-        try {
-            // Загрузить страны
-            const responseCountries = await fetch('/api/countries');
-            const countries = await responseCountries.json();
-            populateSelect('country', countries);
-
-            // Обработчик изменения страны
-            document.getElementById('country').addEventListener('change', async function() {
-                const country = this.value;
-                if (country) {
-                    const responseLeagues = await fetch(`/api/leagues?country=${country}`);
-                    const leagues = await responseLeagues.json();
-                    populateSelect('league', leagues);
-                    populateSelect('team', []);  // Очистить команды при смене страны
-                    populateSelect('opponent', []);  // Очистить соперников при смене страны
-                } else {
-                    populateSelect('league', []);
-                    populateSelect('team', []);
-                    populateSelect('opponent', []);
-                }
-            });
-
-            // Обработчик изменения лиги
-            document.getElementById('league').addEventListener('change', async function() {
-                const league = this.value;
-                const country = document.getElementById('country').value;
-                if (league && country) {
-                    const responseTeams = await fetch(`/api/teams?league=${league}`);
-                    const teams = await responseTeams.json();
-                    populateSelect('team', teams);
-                    populateSelect('opponent', []);  // Очистить соперников при смене лиги
-                } else {
-                    populateSelect('team', []);
-                    populateSelect('opponent', []);
-                }
-            });
-
-            // Обработчик изменения команды
-            document.getElementById('team').addEventListener('change', async function() {
-                const team = this.value;
-                const league = document.getElementById('league').value;
-                const country = document.getElementById('country').value;
-                if (team && league && country) {
-                    const responseOpponents = await fetch(`/api/teams?league=${league}`);
-                    const opponents = await responseOpponents.json();
-                    populateSelect('opponent', opponents);
-                } else {
-                    populateSelect('opponent', []);
-                }
-            });
-
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    }
-
-    // Запуск загрузки данных при загрузке страницы
-    loadData();
-});
+            }
 
 // Функция для отправки формы
-async function submitForm() {
-    const formData = new FormData(document.getElementById('soccerPrematchForm'));
-    const data = {};
+async function submitForm(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const jsonData = {};
+
     formData.forEach((value, key) => {
-        data[key] = value;
+        jsonData[key] = value;
     });
 
     try {
@@ -176,8 +123,24 @@ async function submitForm() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(jsonData),
         });
+
+        const data = await response.json();
+
+        // Очищаем контейнер перед добавлением новых данных
+        document.getElementById('resultsContainer').innerHTML = '';
+
+        if (data.ind_info_team) {
+            renderTable(data.ind_info_team, 'Team Info');
+        }
+        if (data.ind_info_opponent) {
+            renderTable(data.ind_info_opponent, 'Opponent Info'); // Рендеринг для соперника
+        }
+        if (data.ind_info_vs) {
+            renderTable(data.ind_info_vs, 'VS Info'); // Рендеринг для противостояния
+        }
+
 
     } catch (error) {
         console.error('Error submitting form:', error);
@@ -185,11 +148,126 @@ async function submitForm() {
     }
 }
 
-// Привязать эту функцию к кнопке "Submit"
-document.getElementById('soccerPrematchForm').addEventListener('submit', function(event) {
-    event.preventDefault();  // Предотвратить стандартное поведение формы
-    submitForm();
-});
+document.getElementById("soccerPrematchForm").addEventListener("submit", submitForm);
 
+// Запуск загрузки данных при загрузке страницы
+loadData();
+
+function renderTable(indInfoTeam, title) {
+    let html = `<h3>${title}</h3><table border="1"><tr><th>Type</th><th>Scored (0.5)</th><th>Scored (1.5)</th><th>Scored (2.5)</th><th>Conceded (0.5)</th><th>Conceded (1.5)</th><th>Conceded (2.5)</th></tr>`;
+
+    const homeStats = indInfoTeam[0].home;
+    const awayStats = indInfoTeam[1].away;
+
+    function calculatePercentage(value, total) {
+        return total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+    }
+
+    // Строки для домашней команды
+    html += `<tr>
+                <td>Home FT</td>
+                <td>${homeStats.scored.gt0}/${homeStats.number}<br>${calculatePercentage(homeStats.scored.gt0, homeStats.number)}%</td>
+                <td>${homeStats.scored.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.scored.gt1, homeStats.number)}%</td>
+                <td>${homeStats.scored.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.scored.gt2, homeStats.number)}%</td>
+                <td>${homeStats.conceded.gt0}/${homeStats.number}<br>${calculatePercentage(homeStats.conceded.gt0, homeStats.number)}%</td>
+                <td>${homeStats.conceded.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.conceded.gt1, homeStats.number)}%</td>
+                <td>${homeStats.conceded.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.conceded.gt2, homeStats.number)}%</td>
+              </tr>`;
+     html += `<tr>
+                <td>Home 1HALF</td>
+                <td>${homeStats.first_half.scored.gt0}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.scored.gt0, homeStats.number)}%</td>
+                <td>${homeStats.first_half.scored.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.scored.gt1, homeStats.number)}%</td>
+                <td>${homeStats.first_half.scored.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.scored.gt2, homeStats.number)}%</td>
+                <td>${homeStats.first_half.conceded.gt0}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.conceded.gt0, homeStats.number)}%</td>
+                <td>${homeStats.first_half.conceded.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.conceded.gt1, homeStats.number)}%</td>
+                <td>${homeStats.first_half.conceded.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.conceded.gt2, homeStats.number)}%</td>
+             </tr>`;
+
+    // Строки для выездной команды
+    html += `<tr>
+                <td>Away FT</td>
+                <td>${awayStats.scored.gt0}/${awayStats.number}<br>${calculatePercentage(awayStats.scored.gt0, awayStats.number)}%</td>
+                <td>${awayStats.scored.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.scored.gt1, awayStats.number)}%</td>
+                <td>${awayStats.scored.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.scored.gt2, awayStats.number)}%</td>
+                <td>${awayStats.conceded.gt0}/${awayStats.number}<br>${calculatePercentage(awayStats.conceded.gt0, awayStats.number)}%</td>
+                <td>${awayStats.conceded.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.conceded.gt1, awayStats.number)}%</td>
+                <td>${awayStats.conceded.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.conceded.gt2, awayStats.number)}%</td>
+              </tr>`;
+
+        html += `<tr>
+                <td>Away 1HALF</td>
+                <td>${awayStats.first_half.scored.gt0}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.scored.gt0, awayStats.number)}%</td>
+                <td>${awayStats.first_half.scored.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.scored.gt1, awayStats.number)}%</td>
+                <td>${awayStats.first_half.scored.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.scored.gt2, awayStats.number)}%</td>
+                <td>${awayStats.first_half.conceded.gt0}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.conceded.gt0, awayStats.number)}%</td>
+                <td>${awayStats.first_half.conceded.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.conceded.gt1, awayStats.number)}%</td>
+                <td>${awayStats.first_half.conceded.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.conceded.gt2, awayStats.number)}%</td>
+              </tr>`;
+
+    html += '</table>';
+    document.getElementById('resultsContainer').innerHTML += html; // Обновляем контейнер результатами
+
+    renderWinLossDrawTable(homeStats, awayStats);
+}
+
+function renderWinLossDrawTable(homeStats, awayStats) {
+    let winLossDrawHtml = '<h3>Wins, Losses, and Draws</h3>';
+    winLossDrawHtml += '<table border="1"><tr><th>Type</th><th>Wins (0.5)</th><th>Wins (1.5)</th><th>Wins (2.5)</th><th>Losses (0.5)</th><th>Losses (1.5)</th><th>Losses (2.5)</th><th>Draws</th></tr>';
+
+    function calculatePercentage(value, total) {
+        return total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+    }
+
+    // Данные для домашней команды
+    winLossDrawHtml += `<tr>
+        <td>Home FT</td>
+        <td>${homeStats.wins.wins}/${homeStats.number}<br>${calculatePercentage(homeStats.wins.wins, homeStats.number)}%</td>
+        <td>${homeStats.wins.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.wins.gt1, homeStats.number)}%</td>
+        <td>${homeStats.wins.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.wins.gt2, homeStats.number)}%</td>
+        <td>${homeStats.losses.lose}/${homeStats.number}<br>${calculatePercentage(homeStats.losses.lose, homeStats.number)}%</td>
+        <td>${homeStats.losses.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.losses.gt1, homeStats.number)}%</td>
+        <td>${homeStats.losses.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.losses.gt2, homeStats.number)}%</td>
+        <td>${homeStats.draws}/${homeStats.number}<br>${calculatePercentage(homeStats.draws, homeStats.number)}%</td>
+    </tr>`;
+
+
+    winLossDrawHtml += `<tr>
+        <td>Home 1HALF</td>
+        <td>${homeStats.first_half.wins.wins}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.wins.wins, homeStats.number)}%</td>
+        <td>${homeStats.first_half.wins.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.wins.gt1, homeStats.number)}%</td>
+        <td>${homeStats.first_half.wins.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.wins.gt2, homeStats.number)}%</td>
+        <td>${homeStats.first_half.losses.lose}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.losses.lose, homeStats.number)}%</td>
+        <td>${homeStats.first_half.losses.gt1}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.losses.gt1, homeStats.number)}%</td>
+        <td>${homeStats.first_half.losses.gt2}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.losses.gt2, homeStats.number)}%</td>
+        <td>${homeStats.first_half.draws}/${homeStats.number}<br>${calculatePercentage(homeStats.first_half.draws, homeStats.number)}%</td>
+    </tr>`;
+
+    // Данные для выездной команды
+    winLossDrawHtml += `<tr>
+        <td>Away FT</td>
+        <td>${awayStats.wins.wins}/${awayStats.number}<br>${calculatePercentage(awayStats.wins.wins, awayStats.number)}%</td>
+        <td>${awayStats.wins.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.wins.gt1, awayStats.number)}%</td>
+        <td>${awayStats.wins.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.wins.gt2, awayStats.number)}%</td>
+        <td>${awayStats.losses.lose}/${awayStats.number}<br>${calculatePercentage(awayStats.losses.lose, awayStats.number)}%</td>
+        <td>${awayStats.losses.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.losses.gt1, awayStats.number)}%</td>
+        <td>${awayStats.losses.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.losses.gt2, awayStats.number)}%</td>
+        <td>${awayStats.draws}/${awayStats.number}<br>${calculatePercentage(awayStats.draws, awayStats.number)}%</td>
+    </tr>`;
+
+        winLossDrawHtml += `<tr>
+        <td>Away 1HALF</td>
+        <td>${awayStats.first_half.wins.wins}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.wins.wins, awayStats.number)}%</td>
+        <td>${awayStats.first_half.wins.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.wins.gt1, awayStats.number)}%</td>
+        <td>${awayStats.first_half.wins.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.wins.gt2, awayStats.number)}%</td>
+        <td>${awayStats.first_half.losses.lose}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.losses.lose, awayStats.number)}%</td>
+        <td>${awayStats.first_half.losses.gt1}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.losses.gt1, awayStats.number)}%</td>
+        <td>${awayStats.first_half.losses.gt2}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.losses.gt2, awayStats.number)}%</td>
+        <td>${awayStats.first_half.draws}/${awayStats.number}<br>${calculatePercentage(awayStats.first_half.draws, awayStats.number)}%</td>
+    </tr>`;
+
+    winLossDrawHtml += '</table>';
+    document.getElementById('resultsContainer').innerHTML += winLossDrawHtml; // Добавляем таблицу побед/поражений
+}
+        });
     </script>
 {% endblock %}

@@ -1,0 +1,78 @@
+<fieldset>
+    <legend>Odds Scan Details</legend>
+    <div class="form-group">
+        <div>
+            <label for="country">Country:</label><br>
+            <select id="country" name="country">
+                <option value="">Select a country</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div>
+            <label for="league">League:</label><br>
+            <select id="league" name="league">
+                <option value="">Select a league</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div>
+            <label for="team">Team:</label><br>
+            <select id="team" name="team">
+                <option value="">Select a team</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div>
+            <label for="opponent">Opponent:</label><br>
+            <select id="opponent" name="opponent">
+                <option value="">Select an opponent team</option>
+                <!-- Options will be populated dynamically -->
+            </select>
+        </div>
+        <div>
+            <label for="sportbook">Sportbook:</label><br>
+            <select id="sportbook" name="sportbook">
+                <option value="1xbet">1xbet</option>
+                <option value="bet365">bet365</option>
+                <option value="unibet">unibet</option>
+            </select>
+        </div>
+        <div>
+            <label for="date_from">Date from:</label><br>
+            <input type="date" id="date_from" name="date_from" required>
+        </div>
+        <div>
+            <label for="date_to">Date to:</label><br>
+            <input type="date" id="date_to" name="date_to" required>
+        </div>
+        <div class="full-width"></div> <!-- Добавляем этот элемент, чтобы перейти на новую строку -->
+    </div>
+</fieldset>
+
+<script>
+    // Function to format date to yyyy-mm-dd
+    function formatDate(date) {
+        let d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        let year = d.getFullYear();
+
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+
+    // Function to calculate date 6 months ago
+    function getSixMonthsAgo() {
+        let today = new Date();
+        today.setMonth(today.getMonth() - 6); // Move date 6 months back
+        return today;
+    }
+
+    // Set the date_to field to today's date and date_from to 6 months ago
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.getElementById('date_to').value = formatDate(new Date());
+        document.getElementById('date_from').value = formatDate(getSixMonthsAgo());
+    });
+</script>

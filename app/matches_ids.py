@@ -223,6 +223,8 @@ def get_matches_ids(
 
     # Получаем список match_id
     match_ids = match_ids_query.distinct().all()
+    print(match_ids)
     match_id_list = [match_id[0] for match_id in match_ids]
+    print(match_id_list)
 
     return match_id_list

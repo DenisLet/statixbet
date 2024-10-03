@@ -9,7 +9,7 @@ from app.forms import SoccerLiveInput, SoccerLiveAdditionalInput, SoccerMainOdds
 from app.models import User, ChampionshipsSoccer, SoccerMain, XbetOdds, Bet365Odds, UnibetOdds, SoccerTimeline
 from app.models import SoccerHalf1Stats
 from app.email import send_email, send_password_reset_email
-from app.spare_func import safe_float, count_odds_diff
+from app.spare_func import safe_float, count_odds_diff, calculate_gth1
 from itsdangerous import URLSafeTimedSerializer
 import os
 from datetime import datetime
@@ -29,9 +29,11 @@ import json
 import matplotlib.pyplot as plt
 import io
 from app.graphs import plot_goals, plot_area_chart, plot_yc, plot_area_chart_yc, plot_1goal_distribution, one_more_goal
+from app.graphs import plot_1yc_distribution
 import ssl
 from app.closest_matches import MatchFinder, odds_calc, extract_match_ids
-
+from app.soccer_permatch_queries.goals import get_ind_goals_team, get_ind_goals_opponent, get_ind_goals_vs
+from sqlalchemy.orm import aliased
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -51,7 +53,7 @@ def login():
             flash('Invalid username or password')
             return redirect(url_for('login'))
         if not user.is_confirmed:
-            flash('Your account is not confirmed. Please check your email or request a new confirmation link.')
+            flash('Your account is not confirmed. Please check your email or request a new confirmation link. Check spam from test.testov.run@gmail.com')
             return redirect(url_for('resend_confirmation'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
@@ -81,7 +83,7 @@ def register():
         html = render_template('activate.html', confirm_url=confirm_url)
         subject = "Please confirm your email"
         send_email(subject, app.config['ADMINS'][0], [user.email], html, html)
-        flash('A confirmation email has been sent via email.', 'success')
+        flash('A confirmation email has been sent via email. Check spam from test.testov.run@gmail.com', 'success')
         return redirect(url_for('index'))
     return render_template('register.html', title='Register', form=form)
 
@@ -128,7 +130,7 @@ def resend_confirmation():
             html = render_template('activate.html', confirm_url=confirm_url)
             subject = "Please confirm your email"
             send_email(subject, app.config['ADMINS'][0], [user.email], html, html)
-            flash('A new confirmation email has been sent.', 'success')
+            flash('A new confirmation email has been sent. Check spam from test.testov.run@gmail.com', 'success')
             return redirect(url_for('login'))
         else:
             flash('Invalid email or account already confirmed.', 'danger')
@@ -144,7 +146,7 @@ def reset_password_request():
             sa.select(User).where(User.email == form.email.data))
         if user:
             send_password_reset_email(user)
-        flash('Check your email for the instructions to reset your password')
+        flash('Check your email for the instructions to reset your password. Check spam from test.testov.run@gmail.com')
         return redirect(url_for('login'))
     return render_template('reset_password_request.html',
                            title='Reset Password', form=form)
@@ -810,7 +812,7 @@ def soccer_live():
                         lose_open, lose_open_plus, lose_open_minus, total15_open, total15_open_plus, total15_open_minus,
                         total25_open, total25_open_plus, total25_open_minus, selected_model
                     )
-
+                    print(yellows_t1, yellows_t2)
                     match_ids = get_matches_ids(score_t1_form, score_t2_form, country, league, team1, team2,
                                                 xg_t1, xg_t1_plus, xg_t1_minus, xg_t2, xg_t2_plus, xg_t2_minus,
                                                 shots_t1, shots_t1_plus, shots_t1_minus, shots_t2, shots_t2_plus,
@@ -853,7 +855,8 @@ def soccer_live():
 
 
                     timeline_yc = make_timeline_yc(match_ids)
-                    print(match_ids)
+                    # print(match_ids)
+                    # print(timeline_yc)
                     if timeline_yc:
                         home_yc_h2 = timeline_yc['home_yc_h2']
                         away_yc_h2 = timeline_yc['away_yc_h2']
@@ -864,13 +867,24 @@ def soccer_live():
                         away_yc_img = plot_yc(away_yc_h2, title='Away 1st YC(2 half)')
                         yc_img = plot_yc(yc_h2, title='1st YC(2 half)')
                         yc_area_img = plot_area_chart_yc(yc_h2, home_yc_h2, away_yc_h2)
-                        print(home_yc_h2)
-                        print(away_yc_h2)
-                        print(yc_h2)
+                        one_yc_between = plot_1yc_distribution(yc_h2)
+                        next_yc_img = None
+
+                        # Проверяем, что since1 и till1 являются целыми числами
+                        if isinstance(since1, int) and isinstance(till1, int):
+                            # Если since2 и till2 не заданы (None), передаем None для их значений
+                            if since2 is None or till2 is None:
+                                next_yc_img = one_more_goal(yc_h2, home_yc_h2, away_yc_h2, since1, till1,
+                                                              team1_group,
+                                                              None, None, None)
+                            # Если since2 и till2 также являются целыми числами, вызываем функцию с обеими группами параметров
+                            elif isinstance(since2, int) and isinstance(till2, int):
+                                next_yc_img = one_more_goal(yc_h2, home_yc_h2, away_yc_h2, since1, till1,
+                                                              team1_group,
+                                                              since2, till2, team2_group)
                     else:
                         print("No data found for the specified match_id.")
-                        home_yc_img = away_yc_img = yc_img = yc_area_img = None
-
+                        home_yc_img = away_yc_img = yc_img = yc_area_img = next_yc_img =None
 
                     return render_template('soccer/soccer_live.html',
                                            form=form,
@@ -886,7 +900,9 @@ def soccer_live():
                                            home_yc_img=home_yc_img,
                                            away_yc_img=away_yc_img,
                                            yc_img=yc_img,
-                                           yc_area_img=yc_area_img)
+                                           yc_area_img=yc_area_img,
+                                           one_yc_between=one_yc_between,
+                                           next_yc_img=next_yc_img)
 
                 if request.method == 'POST':
                     button = request.form.get('button')
@@ -1056,6 +1072,7 @@ def soccer_live():
                                                    total_throws_entries=total_throws_entries,
                                                    throws_percentages=throws_percentages,
                                                    button=button)
+        SoccerMainAlias = aliased(SoccerMain)
 
         query = db.session.query(
             (SoccerTimeline.score_t1_h2 + SoccerTimeline.score_t2_h2).label('total_score_h2'),
@@ -1067,6 +1084,10 @@ def soccer_live():
             selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).join(
             SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+        ).join(
+            SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
+        ).filter(
+            SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
         )
 
         if country and country != 'None':
@@ -1289,6 +1310,9 @@ def soccer_live():
             ]
 
         # Аналогичная фильтрация и расчеты для команд
+        SoccerMainAlias = aliased(SoccerMain)
+
+        # Аналогичная фильтрация и расчеты для команд
         team1_entries = db.session.query(
             SoccerTimeline.score_t1_h2.label('team1_score_h2'),
             func.count().label('count')
@@ -1296,9 +1320,12 @@ def soccer_live():
             selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).join(
             SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
+        ).join(
+            SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
         ).filter(
             (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+            SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
         )
 
 
@@ -1511,6 +1538,9 @@ def soccer_live():
                 for entry in team1_entries
             ]
 
+        SoccerMainAlias = aliased(SoccerMain)
+
+        # Аналогичная фильтрация и расчеты для команды 2
         team2_entries = db.session.query(
             SoccerTimeline.score_t2_h2.label('team2_score_h2'),
             func.count().label('count')
@@ -1518,10 +1548,12 @@ def soccer_live():
             selected_model, SoccerTimeline.match_id == selected_model.match_id
         ).join(
             SoccerHalf1Stats, SoccerTimeline.match_id == SoccerHalf1Stats.match_id
-            # Добавьте соединение с SoccerHalf1Stats
+        ).join(
+            SoccerMainAlias, SoccerTimeline.match_id == SoccerMainAlias.match_id  # Используем алиас
         ).filter(
             (SoccerTimeline.score_t1_h1 == score_t1_form) if score_t1_form else True,
-            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True
+            (SoccerTimeline.score_t2_h1 == score_t2_form) if score_t2_form else True,
+            SoccerMainAlias.final != 'Awarded'  # Фильтруем по полю final через алиас
         )
 
         if country and country != 'None':
@@ -1732,6 +1764,9 @@ def soccer_live():
                 (entry.team2_score_h2, entry.count, (entry.count / total_team2_entries) * 100)
                 for entry in team2_entries
             ]
+
+        eval1, gth1 = calculate_gth1(team1_percentages, team2_percentages)
+        print(eval1, gth1)
         # Расчет вероятности того, что хотя бы одна команда забьет гол
         if team1_percentages and team2_percentages:
             # Преобразование процентных данных в вероятности
@@ -1825,6 +1860,8 @@ def soccer_live():
             country_choices=country_choices,
             total_entries=total_entries,
             overall_probability_over0=overall_probability_over0,
+            eval1=eval1,
+            gth1=gth1,
             home_goals_img=home_goals_img,
             away_goals_img=away_goals_img,
             goals_img=goals_img,
@@ -1987,12 +2024,129 @@ def soccer_prematch():
     if request.method == 'POST':
         # Получение данных из POST-запроса
         data = request.json  # Если данные отправлены в формате JSON
+        print(data)
         if not data:
             data = request.form  # Если данные отправлены в формате URL-encoded
 
-        print("Received data:", data)  # Печать данных в консоль
+        # Извлечение переменных из запроса
+        country = data.get('country', '').strip()
+        league = data.get('league', '').strip()
+        team = data.get('team', '').strip()
+        opponent = data.get('opponent', '').strip()
+        sportbook = data.get('sportbook', '').strip().lower()
+        date_from = data.get('date_from', '')
+        date_to = data.get('date_to', '')
 
-        return jsonify({'message': 'Data received successfully!'}), 200
+        # Коэффициенты команды 1
+        team1_win = safe_float(data.get('team1-win', 0))
+        team1_win_minus = safe_float(data.get('team1-win-minus', 0))
+        team1_win_plus = safe_float(data.get('team1-win-plus', 0))
+        team1_win_close = safe_float(data.get('team1-win-close', 0))
+        team1_win_close_minus = safe_float(data.get('team1-win-close-minus', 0))
+        team1_win_close_plus = safe_float(data.get('team1-win-close-plus', 0))
 
+        team1_draw = safe_float(data.get('team1-draw', ''))
+        team1_draw_minus = safe_float(data.get('team1-draw-minus', ''))
+        team1_draw_plus = safe_float(data.get('team1-draw-plus', ''))
+        team1_draw_close = safe_float(data.get('team1-draw-close', ''))
+        team1_draw_close_minus = safe_float(data.get('team1-draw-close-minus', ''))
+        team1_draw_close_plus = safe_float(data.get('team1-draw-close-plus', ''))
+
+        team1_loss = safe_float(data.get('team1-loss', ''))
+        team1_loss_minus = safe_float(data.get('team1-loss-minus', ''))
+        team1_loss_plus = safe_float(data.get('team1-loss-plus', ''))
+        team1_loss_close = safe_float(data.get('team1-loss-close', ''))
+        team1_loss_close_minus = safe_float(data.get('team1-loss-close-minus', ''))
+        team1_loss_close_plus = safe_float(data.get('team1-loss-close-plus', ''))
+
+        team1_over_1_5 = safe_float(data.get('team1-over-1.5', ''))
+        team1_over_1_5_minus = safe_float(data.get('team1-over-1.5-minus', ''))
+        team1_over_1_5_plus = safe_float(data.get('team1-over-1.5-plus', ''))
+        team1_over_1_5_close = safe_float(data.get('team1-over-1.5-close', ''))
+        team1_over_1_5_close_minus = safe_float(data.get('team1-over-1.5-close-minus', ''))
+        team1_over_1_5_close_plus = safe_float(data.get('team1-over-1.5-close-plus', ''))
+
+        team1_over_2_5 = safe_float(data.get('team1-over-2.5', ''))
+        team1_over_2_5_minus = safe_float(data.get('team1-over-2.5-minus', ''))
+        team1_over_2_5_plus = safe_float(data.get('team1-over-2.5-plus', ''))
+        team1_over_2_5_close = safe_float(data.get('team1-over-2.5-close', ''))
+        team1_over_2_5_close_minus = safe_float(data.get('team1-over-2.5-close-minus', ''))
+        team1_over_2_5_close_plus = safe_float(data.get('team1-over-2.5-close-plus', ''))
+        print('/////')
+        print(team1_win_close, type(team1_win_close))
+        print('/////')
+        # Конвертация строковых дат в объекты datetime
+        if date_from:
+            try:
+                date_from = datetime.strptime(date_from, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date_from format, should be YYYY-MM-DD'}), 400
+
+        if date_to:
+            try:
+                date_to = datetime.strptime(date_to, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date_to format, should be YYYY-MM-DD'}), 400
+
+        sportbook_models = {
+            '1xbet': XbetOdds,
+            'bet365': Bet365Odds,
+            'unibet': UnibetOdds
+        }
+        selected_model = sportbook_models.get(sportbook)
+
+        if not selected_model:
+            return jsonify({'error': 'Invalid sportbook'}), 400
+
+        ind_info_team = get_ind_goals_team(country, league, team, opponent, sportbook, date_from, date_to,
+                  team1_win, team1_win_minus, team1_win_plus, team1_win_close,
+                  team1_win_close_minus, team1_win_close_plus, team1_draw,
+                  team1_draw_minus, team1_draw_plus, team1_draw_close,
+                  team1_draw_close_minus, team1_draw_close_plus, team1_loss,
+                  team1_loss_minus, team1_loss_plus, team1_loss_close,
+                  team1_loss_close_minus, team1_loss_close_plus, team1_over_1_5,
+                  team1_over_1_5_minus, team1_over_1_5_plus, team1_over_1_5_close,
+                  team1_over_1_5_close_minus, team1_over_1_5_close_plus, team1_over_2_5,
+                  team1_over_2_5_minus, team1_over_2_5_plus, team1_over_2_5_close,
+                  team1_over_2_5_close_minus, team1_over_2_5_close_plus, selected_model)
+
+        ind_info_opponent = get_ind_goals_opponent(country, league, team, opponent, sportbook, date_from, date_to,
+                  team1_win, team1_win_minus, team1_win_plus, team1_win_close,
+                  team1_win_close_minus, team1_win_close_plus, team1_draw,
+                  team1_draw_minus, team1_draw_plus, team1_draw_close,
+                  team1_draw_close_minus, team1_draw_close_plus, team1_loss,
+                  team1_loss_minus, team1_loss_plus, team1_loss_close,
+                  team1_loss_close_minus, team1_loss_close_plus, team1_over_1_5,
+                  team1_over_1_5_minus, team1_over_1_5_plus, team1_over_1_5_close,
+                  team1_over_1_5_close_minus, team1_over_1_5_close_plus, team1_over_2_5,
+                  team1_over_2_5_minus, team1_over_2_5_plus, team1_over_2_5_close,
+                  team1_over_2_5_close_minus, team1_over_2_5_close_plus, selected_model)
+
+        ind_info_vs = get_ind_goals_vs(country, league, team, opponent, sportbook, date_from, date_to,
+                  team1_win, team1_win_minus, team1_win_plus, team1_win_close,
+                  team1_win_close_minus, team1_win_close_plus, team1_draw,
+                  team1_draw_minus, team1_draw_plus, team1_draw_close,
+                  team1_draw_close_minus, team1_draw_close_plus, team1_loss,
+                  team1_loss_minus, team1_loss_plus, team1_loss_close,
+                  team1_loss_close_minus, team1_loss_close_plus, team1_over_1_5,
+                  team1_over_1_5_minus, team1_over_1_5_plus, team1_over_1_5_close,
+                  team1_over_1_5_close_minus, team1_over_1_5_close_plus, team1_over_2_5,
+                  team1_over_2_5_minus, team1_over_2_5_plus, team1_over_2_5_close,
+                  team1_over_2_5_close_minus, team1_over_2_5_close_plus, selected_model)
+
+
+
+        print(ind_info_team)
+        print()
+        print(ind_info_opponent)
+        print()
+        print(ind_info_vs)
+
+        # return jsonify({'message': 'Data received successfully!', 'results': [str(ind_goal) for ind_goal in ind_goals]}), 200
+        return jsonify({
+            'ind_info_team': ind_info_team,
+            'ind_info_opponent': ind_info_opponent,
+            'ind_info_vs': ind_info_vs
+        })
     # Если метод GET, просто отобразите страницу
     return render_template('soccer/soccer_prematch.html')
